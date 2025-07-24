@@ -22,7 +22,7 @@ import ResponsiveCalendar from "@/components/ui/ResponsiveCalendar"
 interface PatientForm {
   // Personal Information
   fullName: string
-  dateOfBirth: Date | undefined
+  dateOfBirth: string
   gender: string
   bloodGroup: string
   phoneNumber: string
@@ -59,7 +59,7 @@ export default function PatientForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<PatientForm>({
     fullName: "",
-    dateOfBirth: undefined,
+    dateOfBirth: "",
     gender: "",
     bloodGroup: "",
     phoneNumber: "",
@@ -136,7 +136,7 @@ export default function PatientForm() {
       // Reset form
       setFormData({
         fullName: "",
-        dateOfBirth: undefined,
+        dateOfBirth: "",
         gender: "",
         bloodGroup: "",
         phoneNumber: "",
@@ -192,7 +192,7 @@ export default function PatientForm() {
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-4 w-4 mr-2 text-green-600" />
-                <span> 0244138296</span>
+                <span>0244138296</span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Mail className="h-4 w-4 mr-2 text-green-600" />
@@ -228,12 +228,12 @@ export default function PatientForm() {
                       id="dateOfBirth"
                       type="text"
                       placeholder="YYYY-MM-DD"
-                      value={formData.dateOfBirth ? format(formData.dateOfBirth, "yyyy-MM-dd") : ""}
+                      value={formData.dateOfBirth}
                       onChange={e => {
                         const val = e.target.value;
                         // Only update if matches YYYY-MM-DD or is empty
                         if (/^\d{0,4}-?\d{0,2}-?\d{0,2}$/.test(val) || val === "") {
-                          handleInputChange("dateOfBirth", val ? new Date(val) : undefined);
+                          handleInputChange("dateOfBirth", val);
                         }
                       }}
                       className="mt-1"

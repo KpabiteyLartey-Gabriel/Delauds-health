@@ -377,13 +377,17 @@ export default function DoctorDashboard() {
                                   </div>
                                   <div className="flex items-center">
                                     <Calendar className="h-4 w-4 mr-2" />
-                                    {format(new Date(submission.submittedAt), "MMM dd, yyyy")}
+                                    {submission.submittedAt && !isNaN(new Date(submission.submittedAt))
+                                      ? format(new Date(submission.submittedAt), "MMM dd, yyyy")
+                                      : ""}
                                   </div>
                                 </div>
                                 {submission.appointmentDate && (
                                   <div className="mt-2 text-sm font-medium" style={{ color: "#22c55e" }}>
                                     Next Appointment:{" "}
-                                    {format(new Date(submission.appointmentDate), "MMM dd, yyyy 'at' HH:mm")}
+                                    {submission.appointmentDate && !isNaN(new Date(submission.appointmentDate))
+                                      ? format(new Date(submission.appointmentDate), "MMM dd, yyyy 'at' HH:mm")
+                                      : ""}
                                   </div>
                                 )}
                               </div>
@@ -403,7 +407,9 @@ export default function DoctorDashboard() {
                                     <DialogHeader>
                                       <DialogTitle>Patient Details: {submission.fullName}</DialogTitle>
                                       <DialogDescription>
-                                        Submitted on {format(new Date(submission.submittedAt), "MMMM dd, yyyy")}
+                                        Submitted on {submission.submittedAt && !isNaN(new Date(submission.submittedAt))
+                                          ? format(new Date(submission.submittedAt), "MMMM dd, yyyy")
+                                          : ""}
                                       </DialogDescription>
                                     </DialogHeader>
 
@@ -423,7 +429,7 @@ export default function DoctorDashboard() {
                                           </div>
                                           <div>
                                             <span className="font-medium">Date of Birth:</span>{" "}
-                                            {submission.dateOfBirth
+                                            {submission.dateOfBirth && !isNaN(new Date(submission.dateOfBirth))
                                               ? format(new Date(submission.dateOfBirth), "dd/MM/yyyy")
                                               : "Not provided"}
                                           </div>
@@ -549,7 +555,9 @@ export default function DoctorDashboard() {
                                           <div className="bg-green-50 p-4 rounded-lg">
                                             <div className="font-medium text-green-800">
                                               Scheduled:{" "}
-                                              {format(new Date(submission.appointmentDate), "MMMM dd, yyyy 'at' HH:mm")}
+                                              {submission.appointmentDate && !isNaN(new Date(submission.appointmentDate))
+                                                ? format(new Date(submission.appointmentDate), "MMMM dd, yyyy 'at' HH:mm")
+                                                : ""}
                                             </div>
                                             {submission.notes && (
                                               <div className="mt-2 text-sm text-green-700">
