@@ -40,7 +40,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-md flex flex-col items-center">
         {/* Logo placeholder */}
         <div className="mb-6 flex justify-center">
-          <img src="/placeholder-logo.png" alt="Logo" className="h-16 w-auto" />
+          <img src="/logo.jpg" alt="Logo" className="h-16 w-auto" />
         </div>
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-full space-y-6">
           <h2 className="text-2xl font-bold text-center text-green-700">Admin Login</h2>

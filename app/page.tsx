@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -84,6 +84,12 @@ export default function PatientForm() {
     allergies: "",
   })
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleInputChange = (field: keyof PatientForm, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -164,24 +170,27 @@ export default function PatientForm() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8 bg-white rounded-lg p-6 shadow-lg">
-            <div className="flex items-center justify-center mb-4">
-              <Leaf className="h-10 w-10 text-green-600 mr-3" />
+            {/* Remove cover image and white rectangle background */}
+            <div className="flex items-center justify-center mb-1 mt-12">
+              {mounted
+                ? <img src="/logo.jpg" alt="Logo" className="h-20 w-auto mr-3" />
+                : <span className="h-20 w-20 mr-3 inline-block" />
+              }
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">DELAUDS HERBAL HEALTHCARE</h1>
-                <p className="text-lg text-green-600 font-medium italic">"Healing the Natural Way"</p>
+                {/* Subtitle or other content here */}
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mt-4">
-              <div className="flex items-center justify-center">
+            {/* Contact Info under logo */}
+            <div className="flex flex-col items-center gap-1 mb-4">
+              <div className="flex items-center text-sm text-gray-600">
                 <MapPin className="h-4 w-4 mr-2 text-green-600" />
                 <span>Adenta SSNIT Flats, 75 Junction, Accra - Ghana</span>
               </div>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-4 w-4 mr-2 text-green-600" />
                 <span>0344138296 / 0244138296</span>
               </div>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center text-sm text-gray-600">
                 <Mail className="h-4 w-4 mr-2 text-green-600" />
                 <span>benitta75@gmail.com</span>
               </div>
