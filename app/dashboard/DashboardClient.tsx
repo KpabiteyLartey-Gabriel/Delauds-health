@@ -15,10 +15,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import ResponsiveCalendar from "@/components/ui/ResponsiveCalendar"
 import { Search, Calendar, Phone, Mail, Leaf, Eye, Users, FileText, CalendarDays, Plus } from "lucide-react"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 interface PatientSubmission {
   id: string
@@ -56,6 +57,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default function DoctorDashboard() {
   const router = useRouter();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([])
   const [filteredSubmissions, setFilteredSubmissions] = useState<PatientSubmission[]>([])
@@ -65,6 +67,7 @@ export default function DoctorDashboard() {
   const [appointmentDate, setAppointmentDate] = useState("")
   const [appointmentTime, setAppointmentTime] = useState("")
   const [notes, setNotes] = useState("")
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +102,11 @@ export default function DoctorDashboard() {
         setSubmissions(data);
         setFilteredSubmissions(data);
       } catch (err) {
-        // Optionally handle error
+        toast({
+          title: "Failed to load patients",
+          description: "There was an error loading patient data. Please try again.",
+          variant: "destructive",
+        });
       }
     };
     fetchPatients();
@@ -121,6 +128,15 @@ export default function DoctorDashboard() {
     setFilteredSubmissions(filtered)
   }, [submissions, searchTerm])
 
+  useEffect(() => {
+    if (searchTerm && filteredSubmissions.length === 0) {
+      toast({
+        title: "No Results",
+        description: "No patients matched your search.",
+      });
+    }
+  }, [searchTerm, filteredSubmissions, toast]);
+
   const updatePatient = async (id: string, updates: Partial<PatientSubmission>) => {
     const token = localStorage.getItem("adminToken");
     if (!token) return;
@@ -138,26 +154,59 @@ export default function DoctorDashboard() {
         router.replace("/admin-login");
         return;
       }
-      if (!res.ok) throw new Error("Failed to update appointment");
+      if (!res.ok) {
+        toast({
+          title: "Failed to update appointment",
+          description: "There was an error setting the appointment. Please try again.",
+          variant: "destructive",
+        });
+        throw new Error("Failed to update appointment");
+      }
       const updatedPatient = await res.json();
       setSubmissions((prev) => prev.map((submission) => (submission.id === id ? updatedPatient : submission)));
       setFilteredSubmissions((prev) => prev.map((submission) => (submission.id === id ? updatedPatient : submission)));
+      toast({
+        title: "Appointment Set",
+        description: "The appointment was set successfully.",
+      });
     } catch (err) {
       // Optionally handle error
     }
   };
 
   const handleSetAppointment = async () => {
-    if (selectedPatient && appointmentDate && appointmentTime) {
-      const appointmentDateTime = `${appointmentDate} ${appointmentTime}`
-      await updatePatient(selectedPatient.id, {
+    if (!selectedPatient || !selectedPatient._id) {
+      toast({
+        title: "No patient selected",
+        description: "Please select a patient before setting an appointment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!appointmentDate || !appointmentTime) {
+      toast({
+        title: "Missing Date or Time",
+        description: "Please select both an appointment date and time.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const appointmentDateTime = `${appointmentDate} ${appointmentTime}`;
+      await updatePatient(selectedPatient._id, {
         appointmentDate: appointmentDateTime,
         notes: notes,
-      })
-      setAppointmentDate("")
-      setAppointmentTime("")
-      setNotes("")
-      setSelectedPatient(null)
+      });
+      setAppointmentDate("");
+      setAppointmentTime("");
+      setNotes("");
+      setSelectedPatient(null);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to set appointment. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -185,17 +234,37 @@ export default function DoctorDashboard() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8 bg-white rounded-lg p-6 shadow-lg">
+            {/* Logo above dashboard title */}
+            <div className="flex items-center justify-center mb-1 mt-12">
+              <img src="/logo.jpg" alt="Logo" className="h-20 w-auto mr-3" />
+            </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Leaf className="h-10 w-10 text-green-600 mr-3" />
+                {/* Profile picture on the left */}
+                <img src="/profile.png" alt="Profile" className="h-16 w-16 rounded-full border-2 border-green-200 shadow mr-3 object-cover" />
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">DELAUDS HERBAL HEALTHCARE</h1>
-                  <p className="text-green-600 font-medium">Healthcare Provider Dashboard</p>
+                  {/* <h1 className="text-3xl font-bold text-gray-900">DELAUDS HERBAL HEALTHCARE</h1> */}
+                  <p className="text-green-600 font-medium">Welcome, Dr. Doris <span role="img" aria-label="waving hand">👋</span></p>
                 </div>
               </div>
-              <Button variant="outline" asChild>
-                <a href="/">← Back to Patient Form</a>
-              </Button>
+              <div className="flex flex-col items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.origin + "/");
+                    toast({
+                      title: "Form Link Copied",
+                      description: "The patient form link has been copied to your clipboard.",
+                    });
+                  }}
+                  className="text-green-700 border-green-600 hover:bg-green-50 focus:outline-none"
+                >
+                  Copy Form Link
+                </Button>
+                {copied && <span className="text-green-600 text-xs mt-1">Copied!</span>}
+              </div>
             </div>
           </div>
 
@@ -299,8 +368,8 @@ export default function DoctorDashboard() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                                   <div className="flex items-center">
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    {submission.emailAddress}
+                                    <Users className="h-4 w-4 mr-2" />
+                                    {submission.fullName}
                                   </div>
                                   <div className="flex items-center">
                                     <Phone className="h-4 w-4 mr-2" />
@@ -321,7 +390,11 @@ export default function DoctorDashboard() {
                               <div className="flex flex-col md:flex-row gap-2">
                                 <Dialog>
                                   <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setSelectedPatient(submission)}
+                                    >
                                       <Eye className="h-4 w-4 mr-2" />
                                       View Details
                                     </Button>
@@ -517,10 +590,7 @@ export default function DoctorDashboard() {
                                               />
                                             </div>
                                             <Button
-                                              onClick={() => {
-                                                setSelectedPatient(submission)
-                                                handleSetAppointment()
-                                              }}
+                                              onClick={handleSetAppointment}
                                               disabled={!appointmentDate || !appointmentTime}
                                               style={{ backgroundColor: "#22c55e" }}
                                             >
@@ -556,18 +626,7 @@ export default function DoctorDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <CalendarComponent
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      className="rounded-md border w-full"
-                      modifiers={{
-                        hasAppointment: (date) => getAppointmentsForDate(date).length > 0,
-                      }}
-                      modifiersStyles={{
-                        hasAppointment: { backgroundColor: "#22c55e", color: "white", fontWeight: "bold" },
-                      }}
-                    />
+                    <ResponsiveCalendar value={selectedDate || new Date()} onChange={setSelectedDate} />
                   </CardContent>
                 </Card>
 

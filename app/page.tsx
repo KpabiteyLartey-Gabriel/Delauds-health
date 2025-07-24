@@ -17,6 +17,7 @@ import { format } from "date-fns"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import ResponsiveCalendar from "@/components/ui/ResponsiveCalendar"
 
 interface PatientForm {
   // Personal Information
@@ -118,7 +119,14 @@ export default function PatientForm() {
         },
         body: JSON.stringify(formData),
       });
-      if (!response.ok) throw new Error("Failed to submit form");
+      if (!response.ok) {
+        toast({
+          title: "Submission Failed",
+          description: "There was an error submitting your form. Please try again.",
+          variant: "destructive",
+        });
+        throw new Error("Failed to submit form");
+      }
 
       toast({
         title: "Form Submitted Successfully",
@@ -154,11 +162,7 @@ export default function PatientForm() {
         allergies: "",
       })
     } catch (error) {
-      toast({
-        title: "Submission Failed",
-        description: "There was an error submitting your form. Please try again.",
-        variant: "destructive",
-      })
+      // Error toast already shown above
     } finally {
       setIsSubmitting(false)
     }
@@ -188,7 +192,7 @@ export default function PatientForm() {
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-4 w-4 mr-2 text-green-600" />
-                <span>0344138296 / 0244138296</span>
+                <span> 0244138296</span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Mail className="h-4 w-4 mr-2 text-green-600" />
@@ -220,28 +224,20 @@ export default function PatientForm() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label className="text-base font-medium">Date of Birth:</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal mt-1",
-                            !formData.dateOfBirth && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.dateOfBirth ? format(formData.dateOfBirth, "dd/MM/yyyy") : "DD/MM/YYYY"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <CalendarComponent
-                          mode="single"
-                          selected={formData.dateOfBirth}
-                          onSelect={(date) => handleInputChange("dateOfBirth", date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                      id="dateOfBirth"
+                      type="text"
+                      placeholder="YYYY-MM-DD"
+                      value={formData.dateOfBirth ? format(formData.dateOfBirth, "yyyy-MM-dd") : ""}
+                      onChange={e => {
+                        const val = e.target.value;
+                        // Only update if matches YYYY-MM-DD or is empty
+                        if (/^\d{0,4}-?\d{0,2}-?\d{0,2}$/.test(val) || val === "") {
+                          handleInputChange("dateOfBirth", val ? new Date(val) : undefined);
+                        }
+                      }}
+                      className="mt-1"
+                    />
                   </div>
 
                   <div>
