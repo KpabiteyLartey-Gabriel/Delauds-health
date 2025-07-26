@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default function AdminLogin() {
   const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,21 +18,71 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
+    // Validation
+    if (!email || !password) {
+      toast({
+        title: "⚠️ Missing Information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "⚠️ Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
+      toast({
+        title: "⏳ Logging in...",
+        description: "Please wait while we authenticate your credentials.",
+      });
+
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+      
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || "Login failed");
+        const errorMessage = data.message || "Login failed";
+        setError(errorMessage);
+        toast({
+          title: "❌ Login Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
+      
       const data = await res.json();
       localStorage.setItem("adminToken", data.token);
+      
+      toast({
+        title: "✅ Login Successful!",
+        description: "Welcome back! Redirecting to dashboard...",
+      });
+      
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      const errorMessage = err.message || "Network error occurred";
+      setError(errorMessage);
+      toast({
+        title: "❌ Login Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -80,6 +132,10 @@ export default function AdminLogin() {
             onClick={() => {
               navigator.clipboard.writeText(window.location.origin + "/");
               setCopied(true);
+              toast({
+                title: "📋 Form Link Copied!",
+                description: "The patient form link has been copied to your clipboard.",
+              });
               setTimeout(() => setCopied(false), 1500);
             }}
             className="text-green-700 hover:underline text-sm font-medium bg-transparent border-none cursor-pointer focus:outline-none"

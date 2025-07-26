@@ -64,6 +64,17 @@ export default function DoctorDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPatient, setSelectedPatient] = useState<PatientSubmission | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      const appointments = getAppointmentsForDate(date);
+      toast({
+        title: "📅 Date Selected",
+        description: `Viewing appointments for ${format(date, "MMMM dd, yyyy")}. ${appointments.length} appointment(s) found.`,
+      });
+    }
+  };
   const [appointmentDate, setAppointmentDate] = useState("")
   const [appointmentTime, setAppointmentTime] = useState("")
   const [notes, setNotes] = useState("")
@@ -101,16 +112,20 @@ export default function DoctorDashboard() {
         const data = await res.json();
         setSubmissions(data);
         setFilteredSubmissions(data);
+        toast({
+          title: "✅ Patients Loaded",
+          description: `Successfully loaded ${data.length} patient records.`,
+        });
       } catch (err) {
         toast({
-          title: "Failed to load patients",
+          title: "❌ Failed to load patients",
           description: "There was an error loading patient data. Please try again.",
           variant: "destructive",
         });
       }
     };
     fetchPatients();
-  }, [router]);
+  }, [router, toast]);
 
   useEffect(() => {
     // Filter submissions based on search
@@ -126,13 +141,21 @@ export default function DoctorDashboard() {
     }
 
     setFilteredSubmissions(filtered)
-  }, [submissions, searchTerm])
+    
+    // Show search results toast
+    if (searchTerm && filtered.length > 0) {
+      toast({
+        title: "🔍 Search Results",
+        description: `Found ${filtered.length} patient(s) matching "${searchTerm}".`,
+      });
+    }
+  }, [submissions, searchTerm, toast])
 
   useEffect(() => {
     if (searchTerm && filteredSubmissions.length === 0) {
       toast({
-        title: "No Results",
-        description: "No patients matched your search.",
+        title: "🔍 No Results Found",
+        description: `No patients matched your search for "${searchTerm}".`,
       });
     }
   }, [searchTerm, filteredSubmissions, toast]);
@@ -141,6 +164,11 @@ export default function DoctorDashboard() {
     const token = localStorage.getItem("adminToken");
     if (!token) return;
     try {
+      toast({
+        title: "⏳ Setting Appointment",
+        description: "Please wait while we update the appointment...",
+      });
+
       const res = await fetch(`${API_URL}/patients/${id}/appointment`, {
         method: "PUT",
         headers: {
@@ -155,9 +183,10 @@ export default function DoctorDashboard() {
         return;
       }
       if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
         toast({
-          title: "Failed to update appointment",
-          description: "There was an error setting the appointment. Please try again.",
+          title: "❌ Failed to update appointment",
+          description: errorData.message || "There was an error setting the appointment. Please try again.",
           variant: "destructive",
         });
         throw new Error("Failed to update appointment");
@@ -166,18 +195,18 @@ export default function DoctorDashboard() {
       setSubmissions((prev) => prev.map((submission) => (submission.id === id ? updatedPatient : submission)));
       setFilteredSubmissions((prev) => prev.map((submission) => (submission.id === id ? updatedPatient : submission)));
       toast({
-        title: "Appointment Set",
-        description: "The appointment was set successfully.",
+        title: "✅ Appointment Set Successfully!",
+        description: `Appointment scheduled for ${updatedPatient.fullName} on ${format(new Date(updates.appointmentDate!), "MMM dd, yyyy 'at' HH:mm")}.`,
       });
     } catch (err) {
-      // Optionally handle error
+      // Error toast already shown above
     }
   };
 
   const handleSetAppointment = async () => {
     if (!selectedPatient || !selectedPatient._id) {
       toast({
-        title: "No patient selected",
+        title: "⚠️ No patient selected",
         description: "Please select a patient before setting an appointment.",
         variant: "destructive",
       });
@@ -185,7 +214,7 @@ export default function DoctorDashboard() {
     }
     if (!appointmentDate || !appointmentTime) {
       toast({
-        title: "Missing Date or Time",
+        title: "⚠️ Missing Date or Time",
         description: "Please select both an appointment date and time.",
         variant: "destructive",
       });
@@ -203,7 +232,7 @@ export default function DoctorDashboard() {
       setSelectedPatient(null);
     } catch (err) {
       toast({
-        title: "Error",
+        title: "❌ Error",
         description: "Failed to set appointment. Please try again.",
         variant: "destructive",
       });
@@ -255,7 +284,7 @@ export default function DoctorDashboard() {
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.origin + "/");
                     toast({
-                      title: "Form Link Copied",
+                      title: "📋 Form Link Copied!",
                       description: "The patient form link has been copied to your clipboard.",
                     });
                   }}
@@ -299,7 +328,19 @@ export default function DoctorDashboard() {
           </div>
 
           {/* Main Tabs */}
-          <Tabs defaultValue="patients" className="space-y-6">
+          <Tabs defaultValue="patients" className="space-y-6" onValueChange={(value) => {
+            if (value === "patients") {
+              toast({
+                title: "👥 Patients Tab",
+                description: "Viewing patient records and managing appointments.",
+              });
+            } else if (value === "calendar") {
+              toast({
+                title: "📅 Calendar Tab",
+                description: "Viewing appointment calendar and scheduled visits.",
+              });
+            }
+          }}>
             <TabsList className="grid w-full grid-cols-2 bg-white shadow-lg">
               <TabsTrigger
                 value="patients"
@@ -334,7 +375,16 @@ export default function DoctorDashboard() {
                       <Input
                         placeholder="Search by name, email, or phone..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setSearchTerm(value);
+                          if (value) {
+                            toast({
+                              title: "🔍 Searching...",
+                              description: `Searching for patients matching "${value}"...`,
+                            });
+                          }
+                        }}
                         className="pl-10"
                       />
                     </div>
@@ -397,7 +447,13 @@ export default function DoctorDashboard() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => setSelectedPatient(submission)}
+                                      onClick={() => {
+                                        setSelectedPatient(submission);
+                                        toast({
+                                          title: "👁️ Viewing Patient Details",
+                                          description: `Opening details for ${submission.fullName}...`,
+                                        });
+                                      }}
                                     >
                                       <Eye className="h-4 w-4 mr-2" />
                                       View Details
@@ -634,7 +690,7 @@ export default function DoctorDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <ResponsiveCalendar value={selectedDate || new Date()} onChange={setSelectedDate} />
+                    <ResponsiveCalendar value={selectedDate || new Date()} onChange={handleDateChange} />
                   </CardContent>
                 </Card>
 

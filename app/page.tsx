@@ -93,6 +93,24 @@ export default function PatientForm() {
 
   const handleInputChange = (field: keyof PatientForm, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    
+    // Show toast for important field changes
+    if (field === 'fullName' && value.length > 0) {
+      toast({
+        title: "✏️ Name Updated",
+        description: "Patient name has been entered.",
+      });
+    } else if (field === 'phoneNumber' && value.length >= 10) {
+      toast({
+        title: "📞 Phone Number Valid",
+        description: "Phone number format looks good.",
+      });
+    } else if (field === 'emailAddress' && value.includes('@')) {
+      toast({
+        title: "📧 Email Format",
+        description: "Email address format detected.",
+      });
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,7 +120,28 @@ export default function PatientForm() {
     if (!formData.fullName || !formData.phoneNumber || !formData.emailAddress) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields (Name, Phone, Email).",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.emailAddress)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Phone validation
+    if (formData.phoneNumber.length < 10) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number.",
         variant: "destructive",
       })
       return
@@ -111,6 +150,12 @@ export default function PatientForm() {
     setIsSubmitting(true)
 
     try {
+      // Show loading toast
+      toast({
+        title: "Submitting Form",
+        description: "Please wait while we process your information...",
+      })
+
       // Send to backend
       const response = await fetch(`${API_URL}/patients`, {
         method: "POST",
@@ -119,17 +164,19 @@ export default function PatientForm() {
         },
         body: JSON.stringify(formData),
       });
+      
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
         toast({
           title: "Submission Failed",
-          description: "There was an error submitting your form. Please try again.",
+          description: errorData.message || "There was an error submitting your form. Please try again.",
           variant: "destructive",
         });
         throw new Error("Failed to submit form");
       }
 
       toast({
-        title: "Form Submitted Successfully",
+        title: "✅ Form Submitted Successfully!",
         description: "Your information has been sent to DELAUDS HERBAL HEALTHCARE. You will be contacted soon.",
       })
 
@@ -362,7 +409,15 @@ export default function PatientForm() {
                         <Checkbox
                           id={condition.key}
                           checked={formData[condition.key as keyof PatientForm] as boolean}
-                          onCheckedChange={(checked) => handleInputChange(condition.key as keyof PatientForm, checked)}
+                          onCheckedChange={(checked) => {
+                            handleInputChange(condition.key as keyof PatientForm, checked);
+                            if (checked) {
+                              toast({
+                                title: "🏥 Medical Condition",
+                                description: `${condition.label} has been marked as diagnosed.`,
+                              });
+                            }
+                          }}
                         />
                         <Label htmlFor={condition.key} className="text-sm">
                           {condition.label}
@@ -423,7 +478,13 @@ export default function PatientForm() {
                     <Label className="text-base font-medium">Do you smoke?</Label>
                     <RadioGroup
                       value={formData.smoking}
-                      onValueChange={(value) => handleInputChange("smoking", value)}
+                      onValueChange={(value) => {
+                        handleInputChange("smoking", value);
+                        toast({
+                          title: "🚬 Smoking Status",
+                          description: `Smoking status set to: ${value === 'yes' ? 'Yes' : 'No'}`,
+                        });
+                      }}
                       className="flex gap-6 mt-2"
                     >
                       <div className="flex items-center space-x-2">
@@ -441,7 +502,13 @@ export default function PatientForm() {
                     <Label className="text-base font-medium">Drink alcohol?</Label>
                     <RadioGroup
                       value={formData.alcohol}
-                      onValueChange={(value) => handleInputChange("alcohol", value)}
+                      onValueChange={(value) => {
+                        handleInputChange("alcohol", value);
+                        toast({
+                          title: "🍷 Alcohol Consumption",
+                          description: `Alcohol consumption set to: ${value === 'yes' ? 'Yes' : 'No'}`,
+                        });
+                      }}
                       className="flex gap-6 mt-2"
                     >
                       <div className="flex items-center space-x-2">
@@ -460,7 +527,13 @@ export default function PatientForm() {
                   <Label className="text-base font-medium">Exercise:</Label>
                   <RadioGroup
                     value={formData.exercise}
-                    onValueChange={(value) => handleInputChange("exercise", value)}
+                    onValueChange={(value) => {
+                      handleInputChange("exercise", value);
+                      toast({
+                        title: "💪 Exercise Frequency",
+                        description: `Exercise frequency set to: ${value.charAt(0).toUpperCase() + value.slice(1)}`,
+                      });
+                    }}
                     className="flex flex-wrap gap-6 mt-2"
                   >
                     <div className="flex items-center space-x-2">
@@ -486,7 +559,13 @@ export default function PatientForm() {
                   <Label className="text-base font-medium">Diet:</Label>
                   <RadioGroup
                     value={formData.diet}
-                    onValueChange={(value) => handleInputChange("diet", value)}
+                    onValueChange={(value) => {
+                      handleInputChange("diet", value);
+                      toast({
+                        title: "🍽️ Diet Type",
+                        description: `Diet type set to: ${value.charAt(0).toUpperCase() + value.slice(1)}`,
+                      });
+                    }}
                     className="flex flex-wrap gap-6 mt-2"
                   >
                     <div className="flex items-center space-x-2">
