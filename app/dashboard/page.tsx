@@ -1,7 +1,6 @@
-import dynamic from "next/dynamic";
+import { redirect } from "next/navigation"
 
-const DashboardClient = dynamic(() => import("./DashboardClient"), { ssr: false });
-
-export default function Page() {
-  return <DashboardClient />;
+/** @deprecated Use `/admin` */
+export default function LegacyDashboard() {
+  redirect("/admin")
 }

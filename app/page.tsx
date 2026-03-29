@@ -1,637 +1,396 @@
-"use client"
-
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import {
+  BedDouble,
+  CalendarRange,
+  ChevronRight,
+  MapPin,
+  Quote,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Utensils,
+  Wifi,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useToast } from "@/hooks/use-toast"
-import { CalendarIcon, Leaf, Phone, Mail, MapPin } from "lucide-react"
-import { format } from "date-fns"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import ResponsiveCalendar from "@/components/ui/ResponsiveCalendar"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { EXPERIENCE_IMAGE, HERO_ROOM_IMAGE, ROOM_GALLERY } from "@/lib/lodge-media"
 
-interface PatientForm {
-  // Personal Information
-  fullName: string
-  dateOfBirth: string
-  gender: string
-  bloodGroup: string
-  phoneNumber: string
-  emailAddress: string
-  occupation: string
-  address: string
-
-  // Medical History
-  diabetes: boolean
-  hypertension: boolean
-  asthma: boolean
-  arthritis: boolean
-  ulcers: boolean
-  sicklecell: boolean
-  cancer: boolean
-  thyroid: boolean
-  otherConditions: string
-  currentMedications: string
-  surgeries: string
-
-  // Lifestyle & Diet
-  smoking: string
-  alcohol: string
-  exercise: string
-  diet: string
-  otherDiet: string
-  allergies: string
-}
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-export default function PatientForm() {
-  const { toast } = useToast()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState<PatientForm>({
-    fullName: "",
-    dateOfBirth: "",
-    gender: "",
-    bloodGroup: "",
-    phoneNumber: "",
-    emailAddress: "",
-    occupation: "",
-    address: "",
-    diabetes: false,
-    hypertension: false,
-    asthma: false,
-    arthritis: false,
-    ulcers: false,
-    sicklecell: false,
-    cancer: false,
-    thyroid: false,
-    otherConditions: "",
-    currentMedications: "",
-    surgeries: "",
-    smoking: "",
-    alcohol: "",
-    exercise: "",
-    diet: "",
-    otherDiet: "",
-    allergies: "",
-  })
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handleInputChange = (field: keyof PatientForm, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    
-    // Show toast for important field changes
-    if (field === 'fullName' && value.length > 0) {
-      toast({
-        title: "✏️ Name Updated",
-        description: "Patient name has been entered.",
-      });
-    } else if (field === 'phoneNumber' && value.length >= 10) {
-      toast({
-        title: "📞 Phone Number Valid",
-        description: "Phone number format looks good.",
-      });
-    } else if (field === 'emailAddress' && value.includes('@')) {
-      toast({
-        title: "📧 Email Format",
-        description: "Email address format detected.",
-      });
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Validation
-    if (!formData.fullName || !formData.phoneNumber || !formData.emailAddress) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields (Name, Phone, Email).",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailAddress)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Phone validation
-    if (formData.phoneNumber.length < 10) {
-      toast({
-        title: "Invalid Phone Number",
-        description: "Please enter a valid phone number.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      // Show loading toast
-      toast({
-        title: "Submitting Form",
-        description: "Please wait while we process your information...",
-      })
-
-      // Send to backend
-      const response = await fetch(`${API_URL}/patients`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        toast({
-          title: "Submission Failed",
-          description: errorData.message || "There was an error submitting your form. Please try again.",
-          variant: "destructive",
-        });
-        throw new Error("Failed to submit form");
-      }
-
-      toast({
-        title: "✅ Form Submitted Successfully!",
-        description: "Your information has been sent to DELAUDS HERBAL HEALTHCARE. You will be contacted soon.",
-      })
-
-      // Reset form
-      setFormData({
-        fullName: "",
-        dateOfBirth: "",
-        gender: "",
-        bloodGroup: "",
-        phoneNumber: "",
-        emailAddress: "",
-        occupation: "",
-        address: "",
-        diabetes: false,
-        hypertension: false,
-        asthma: false,
-        arthritis: false,
-        ulcers: false,
-        sicklecell: false,
-        cancer: false,
-        thyroid: false,
-        otherConditions: "",
-        currentMedications: "",
-        surgeries: "",
-        smoking: "",
-        alcohol: "",
-        exercise: "",
-        diet: "",
-        otherDiet: "",
-        allergies: "",
-      })
-    } catch (error) {
-      // Error toast already shown above
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-green-50">
-      <div className="p-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8 bg-white rounded-lg p-6 shadow-lg">
-            {/* Remove cover image and white rectangle background */}
-            <div className="flex items-center justify-center mb-1 mt-12">
-              {mounted
-                ? <img src="/logo.jpg" alt="Logo" className="h-20 w-auto mr-3" />
-                : <span className="h-20 w-20 mr-3 inline-block" />
-              }
-              <div>
-                {/* Subtitle or other content here */}
+    <div className="min-h-screen bg-stone-950 text-stone-100">
+      <header className="sticky top-0 z-50 border-b border-stone-800/80 bg-stone-950/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+              <BedDouble className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="text-sm sm:text-base">Delauds Lodge</span>
+          </Link>
+          <nav className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="hidden text-stone-300 hover:text-white sm:inline-flex"
+            >
+              <Link href="/login">Sign in</Link>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              className="bg-amber-500 font-semibold text-stone-950 shadow-sm hover:bg-amber-400"
+            >
+              <Link href="/register">Book your stay</Link>
+            </Button>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        {/* Hero — room photo + headline */}
+        <section className="relative overflow-hidden border-b border-stone-800">
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_70%_-10%,rgba(245,158,11,0.18),transparent)]"
+            aria-hidden
+          />
+          <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 lg:py-20">
+            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+              <div className="order-2 lg:order-1">
+                <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-200 sm:text-sm">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Accra, Ghana · Rates in GHS
+                </p>
+                <h1 className="max-w-xl text-balance font-serif text-4xl font-medium leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+                  Rest easy — your room is waiting
+                </h1>
+                <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-stone-400 sm:text-lg">
+                  Real photos of the kind of stay we offer: single rooms, fresh linens, and space to breathe. Check
+                  availability for your dates, compare nightly prices in Ghana Cedis, and book in minutes.
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="h-12 rounded-lg bg-amber-500 px-8 text-base font-semibold text-stone-950 shadow-lg shadow-amber-950/25 hover:bg-amber-400"
+                  >
+                    <Link href="/register" className="inline-flex items-center gap-2">
+                      Book a reservation
+                      <ChevronRight className="h-4 w-4" aria-hidden />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="h-12 rounded-lg border-stone-600 bg-stone-900/40 text-stone-100 hover:bg-stone-800"
+                  >
+                    <Link href="/login">I have an account</Link>
+                  </Button>
+                </div>
+                <p className="mt-6 text-sm text-stone-500">
+                  Walk-ins welcome at reception.{" "}
+                  <Link href="/login" className="font-medium text-amber-400/90 underline-offset-4 hover:underline">
+                    Staff portal
+                  </Link>
+                </p>
               </div>
-            </div>
-            {/* Contact Info under logo */}
-            <div className="flex flex-col items-center gap-1 mb-4">
-              <div className="flex items-center text-sm text-gray-600">
-                <MapPin className="h-4 w-4 mr-2 text-green-600" />
-                <span>Adenta SSNIT Flats, 75 Junction, Accra - Ghana</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Phone className="h-4 w-4 mr-2 text-green-600" />
-                <span>0244138296</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Mail className="h-4 w-4 mr-2 text-green-600" />
-                <span>benitta75@gmail.com</span>
+
+              <div className="order-1 lg:order-2">
+                <div className="relative mx-auto max-w-xl lg:max-w-none">
+                  <div className="absolute -right-4 -top-4 hidden h-24 w-24 rounded-2xl border border-amber-500/20 bg-amber-500/5 lg:block" aria-hidden />
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-800 shadow-2xl shadow-black/50 sm:aspect-[5/4] lg:aspect-[4/5] lg:min-h-[420px]">
+                    <Image
+                      src={HERO_ROOM_IMAGE}
+                      alt="Welcoming lodge bedroom with a comfortable bed and soft lighting"
+                      fill
+                      priority
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                    />
+                    <div
+                      className="absolute inset-0 bg-gradient-to-t from-stone-950/50 via-transparent to-transparent pointer-events-none"
+                      aria-hidden
+                    />
+                    <p className="absolute bottom-4 left-4 right-4 rounded-lg bg-stone-950/75 px-4 py-2 text-center text-xs text-stone-200 backdrop-blur-sm sm:text-sm">
+                      Fresh linens · Calm spaces designed for a good night&apos;s rest
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Patient Information */}
-            <Card className="shadow-lg">
-              <CardHeader className="bg-white border-b">
-                <CardTitle className="text-xl text-gray-900">PATIENT INFORMATION</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div>
-                  <Label htmlFor="fullName" className="text-base font-medium">
-                    Full Name: *
-                  </Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange("fullName", e.target.value)}
-                    required
-                    className="mt-1"
-                  />
-                </div>
+        {/* Room gallery */}
+        <section className="border-b border-stone-800 bg-stone-900/35 py-16 sm:py-24">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="max-w-2xl">
+              <h2 className="font-serif text-3xl font-medium text-white sm:text-4xl">Our rooms</h2>
+              <p className="mt-4 text-lg leading-relaxed text-stone-400">
+                All singles — so you always know what you are booking. Pick the tier and price that match your trip;
+                photos below illustrate the calm, tidy standard we keep across the lodge.
+              </p>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-base font-medium">Date of Birth:</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="text"
-                      placeholder="YYYY-MM-DD"
-                      value={formData.dateOfBirth}
-                      onChange={e => {
-                        const val = e.target.value;
-                        // Only update if matches YYYY-MM-DD or is empty
-                        if (/^\d{0,4}-?\d{0,2}-?\d{0,2}$/.test(val) || val === "") {
-                          handleInputChange("dateOfBirth", val);
-                        }
-                      }}
-                      className="mt-1"
+            <div className="mt-12 grid gap-8 sm:grid-cols-2">
+              {ROOM_GALLERY.map((room) => (
+                <article
+                  key={room.title}
+                  className="group overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 shadow-lg transition hover:border-amber-900/40 hover:shadow-xl"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image
+                      src={room.src}
+                      alt={room.alt}
+                      fill
+                      className="object-cover transition duration-700 ease-out group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, 50vw"
                     />
                   </div>
-
-                  <div>
-                    <Label className="text-base font-medium">Gender:</Label>
-                    <RadioGroup
-                      value={formData.gender}
-                      onValueChange={(value) => handleInputChange("gender", value)}
-                      className="flex gap-6 mt-2"
+                  <div className="p-6 sm:p-7">
+                    <h3 className="font-serif text-xl font-medium text-white">{room.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-400">{room.caption}</p>
+                    <Button
+                      asChild
+                      variant="link"
+                      className="mt-3 h-auto p-0 text-amber-400 hover:text-amber-300"
                     >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="male" id="male" />
-                        <Label htmlFor="male">Male</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="female" id="female" />
-                        <Label htmlFor="female">Female</Label>
-                      </div>
-                    </RadioGroup>
+                      <Link href="/register">Check dates &amp; book →</Link>
+                    </Button>
                   </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
 
-                  <div>
-                    <Label htmlFor="bloodGroup" className="text-base font-medium">
-                      Blood Group:
-                    </Label>
-                    <Select
-                      value={formData.bloodGroup}
-                      onValueChange={(value) => handleInputChange("bloodGroup", value)}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select blood group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A+">A+</SelectItem>
-                        <SelectItem value="A-">A-</SelectItem>
-                        <SelectItem value="B+">B+</SelectItem>
-                        <SelectItem value="B-">B-</SelectItem>
-                        <SelectItem value="AB+">AB+</SelectItem>
-                        <SelectItem value="AB-">AB-</SelectItem>
-                        <SelectItem value="O+">O+</SelectItem>
-                        <SelectItem value="O-">O-</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="phoneNumber" className="text-base font-medium">
-                      Phone Number: *
-                    </Label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      value={formData.phoneNumber}
-                      onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                      required
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="emailAddress" className="text-base font-medium">
-                      Email Address: *
-                    </Label>
-                    <Input
-                      id="emailAddress"
-                      type="email"
-                      value={formData.emailAddress}
-                      onChange={(e) => handleInputChange("emailAddress", e.target.value)}
-                      required
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="occupation" className="text-base font-medium">
-                    Occupation:
-                  </Label>
-                  <Input
-                    id="occupation"
-                    value={formData.occupation}
-                    onChange={(e) => handleInputChange("occupation", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="address" className="text-base font-medium">
-                    Address:
-                  </Label>
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
-                    rows={2}
-                    className="mt-1"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Medical History */}
-            <Card className="shadow-lg">
-              <CardHeader className="bg-white border-b">
-                <CardTitle className="text-xl text-gray-900">MEDICAL HISTORY</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div>
-                  <Label className="text-base font-medium mb-3 block">Have you been diagnosed with:</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                      { key: "diabetes", label: "Diabetes" },
-                      { key: "hypertension", label: "Hypertension" },
-                      { key: "asthma", label: "Asthma" },
-                      { key: "arthritis", label: "Arthritis" },
-                      { key: "ulcers", label: "Ulcers" },
-                      { key: "sicklecell", label: "Sickle Cell" },
-                      { key: "cancer", label: "Cancer" },
-                      { key: "thyroid", label: "Thyroid Issues" },
-                    ].map((condition) => (
-                      <div key={condition.key} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={condition.key}
-                          checked={formData[condition.key as keyof PatientForm] as boolean}
-                          onCheckedChange={(checked) => {
-                            handleInputChange(condition.key as keyof PatientForm, checked);
-                            if (checked) {
-                              toast({
-                                title: "🏥 Medical Condition",
-                                description: `${condition.label} has been marked as diagnosed.`,
-                              });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={condition.key} className="text-sm">
-                          {condition.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="otherConditions" className="text-base font-medium">
-                    Others:
-                  </Label>
-                  <Input
-                    id="otherConditions"
-                    value={formData.otherConditions}
-                    onChange={(e) => handleInputChange("otherConditions", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="currentMedications" className="text-base font-medium">
-                    Current Medications:
-                  </Label>
-                  <Textarea
-                    id="currentMedications"
-                    value={formData.currentMedications}
-                    onChange={(e) => handleInputChange("currentMedications", e.target.value)}
-                    rows={3}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="surgeries" className="text-base font-medium">
-                    Any surgeries (type/year):
-                  </Label>
-                  <Textarea
-                    id="surgeries"
-                    value={formData.surgeries}
-                    onChange={(e) => handleInputChange("surgeries", e.target.value)}
-                    rows={2}
-                    className="mt-1"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Lifestyle & Diet */}
-            <Card className="shadow-lg">
-              <CardHeader className="bg-white border-b">
-                <CardTitle className="text-xl text-gray-900">LIFESTYLE & DIET</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label className="text-base font-medium">Do you smoke?</Label>
-                    <RadioGroup
-                      value={formData.smoking}
-                      onValueChange={(value) => {
-                        handleInputChange("smoking", value);
-                        toast({
-                          title: "🚬 Smoking Status",
-                          description: `Smoking status set to: ${value === 'yes' ? 'Yes' : 'No'}`,
-                        });
-                      }}
-                      className="flex gap-6 mt-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="yes" id="smoke-yes" />
-                        <Label htmlFor="smoke-yes">Yes</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="no" id="smoke-no" />
-                        <Label htmlFor="smoke-no">No</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div>
-                    <Label className="text-base font-medium">Drink alcohol?</Label>
-                    <RadioGroup
-                      value={formData.alcohol}
-                      onValueChange={(value) => {
-                        handleInputChange("alcohol", value);
-                        toast({
-                          title: "🍷 Alcohol Consumption",
-                          description: `Alcohol consumption set to: ${value === 'yes' ? 'Yes' : 'No'}`,
-                        });
-                      }}
-                      className="flex gap-6 mt-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="yes" id="alcohol-yes" />
-                        <Label htmlFor="alcohol-yes">Yes</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="no" id="alcohol-no" />
-                        <Label htmlFor="alcohol-no">No</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-medium">Exercise:</Label>
-                  <RadioGroup
-                    value={formData.exercise}
-                    onValueChange={(value) => {
-                      handleInputChange("exercise", value);
-                      toast({
-                        title: "💪 Exercise Frequency",
-                        description: `Exercise frequency set to: ${value.charAt(0).toUpperCase() + value.slice(1)}`,
-                      });
-                    }}
-                    className="flex flex-wrap gap-6 mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="daily" id="exercise-daily" />
-                      <Label htmlFor="exercise-daily">Daily</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="occasionally" id="exercise-occasionally" />
-                      <Label htmlFor="exercise-occasionally">Occasionally</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="rarely" id="exercise-rarely" />
-                      <Label htmlFor="exercise-rarely">Rarely</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="never" id="exercise-never" />
-                      <Label htmlFor="exercise-never">Never</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div>
-                  <Label className="text-base font-medium">Diet:</Label>
-                  <RadioGroup
-                    value={formData.diet}
-                    onValueChange={(value) => {
-                      handleInputChange("diet", value);
-                      toast({
-                        title: "🍽️ Diet Type",
-                        description: `Diet type set to: ${value.charAt(0).toUpperCase() + value.slice(1)}`,
-                      });
-                    }}
-                    className="flex flex-wrap gap-6 mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="vegetarian" id="diet-vegetarian" />
-                      <Label htmlFor="diet-vegetarian">Vegetarian</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="balanced" id="diet-balanced" />
-                      <Label htmlFor="diet-balanced">Balanced</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="fastfood" id="diet-fastfood" />
-                      <Label htmlFor="diet-fastfood">Fast Food</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="other" id="diet-other" />
-                      <Label htmlFor="diet-other">Other</Label>
-                    </div>
-                  </RadioGroup>
-
-                  {formData.diet === "other" && (
-                    <Input
-                      placeholder="Please specify..."
-                      value={formData.otherDiet}
-                      onChange={(e) => handleInputChange("otherDiet", e.target.value)}
-                      className="mt-2"
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="allergies" className="text-base font-medium">
-                    Allergies:
-                  </Label>
-                  <Textarea
-                    id="allergies"
-                    value={formData.allergies}
-                    onChange={(e) => handleInputChange("allergies", e.target.value)}
-                    rows={3}
-                    className="mt-1"
-                    placeholder="Please list any known allergies..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-center pb-8">
+        {/* Marketing story + image */}
+        <section className="py-16 sm:py-20">
+          <div className="mx-auto grid max-w-6xl gap-12 px-4 lg:grid-cols-2 lg:items-center lg:gap-16">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-800 lg:aspect-auto lg:min-h-[420px]">
+              <Image
+                src={EXPERIENCE_IMAGE}
+                alt="Peaceful guest room interior inviting relaxation"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-widest text-amber-400/90">The experience</p>
+              <h2 className="mt-3 font-serif text-3xl font-medium text-white sm:text-4xl">
+                More than a bed — a base for your Accra plans
+              </h2>
+              <p className="mt-5 text-stone-400 leading-relaxed">
+                Whether you are in town for meetings, family, or a few quiet nights away, we keep things straightforward:
+                fair rates, helpful front desk, and registration handled the way Ghana lodging rules expect—so you can
+                focus on why you came.
+              </p>
+              <ul className="mt-8 space-y-4 text-stone-300">
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden />
+                  Early check-in when we can — always ask before arrival day
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-5 w-5 shrink-0 rounded-full bg-amber-500/20 text-center text-xs leading-5 text-amber-400">
+                    ✓
+                  </span>
+                  Secure online booking and guest login to view your reservation
+                </li>
+              </ul>
               <Button
-                type="submit"
+                asChild
                 size="lg"
-                disabled={isSubmitting}
-                className="w-full md:w-auto px-12 py-3 text-lg font-semibold hover:bg-green-600"
-                style={{ backgroundColor: "#22c55e" }}
+                className="mt-10 bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
               >
-                {isSubmitting ? "Submitting..." : "Submit Patient Information"}
+                <Link href="/register">See availability</Link>
               </Button>
             </div>
-          </form>
-
-          <div className="text-center pb-4">
-            <Button variant="link" asChild className="text-white hover:text-gray-200">
-              <a href="/dashboard">Healthcare Provider Dashboard</a>
-            </Button>
           </div>
+        </section>
+
+        {/* Social proof */}
+        <section className="border-y border-stone-800 bg-gradient-to-b from-stone-900/80 to-stone-950 py-16">
+          <div className="mx-auto max-w-4xl px-4 text-center">
+            <div className="flex justify-center gap-1 text-amber-400" aria-label="5 out of 5 stars">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" aria-hidden />
+              ))}
+            </div>
+            <Quote className="mx-auto mt-6 h-10 w-10 text-stone-600" aria-hidden />
+            <blockquote className="mt-4 font-serif text-xl leading-relaxed text-stone-200 sm:text-2xl">
+              &ldquo;Easy online booking, room matched the photos, and the team made check-in smooth.&rdquo;
+            </blockquote>
+            <p className="mt-4 text-sm text-stone-500">Sample guest quote — replace with real testimonials.</p>
+          </div>
+        </section>
+
+        {/* Why choose us — icon cards */}
+        <section className="border-b border-stone-800 bg-stone-900/30 py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4">
+            <h2 className="text-center font-serif text-2xl font-medium text-white sm:text-3xl">Why guests choose us</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-stone-400">
+              Simple booking, honest pricing, and lodging registration done right.
+            </p>
+            <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  icon: CalendarRange,
+                  title: "Live availability",
+                  text: "Pick dates and see which rooms are free—no guessing.",
+                },
+                {
+                  icon: Sparkles,
+                  title: "Rates in GHS",
+                  text: "Compare nightly prices in Ghana Cedis before you commit.",
+                },
+                {
+                  icon: ShieldCheck,
+                  title: "Guest register",
+                  text: "We collect what Ghana regulations expect, securely online.",
+                },
+                {
+                  icon: Wifi,
+                  title: "Comfort first",
+                  text: "Rooms kept clean and ready for rest or remote work.",
+                },
+              ].map((item) => (
+                <li key={item.title}>
+                  <Card className="h-full border-stone-800 bg-stone-900/60 shadow-none transition hover:border-amber-900/50">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
+                        <item.icon className="h-5 w-5" aria-hidden />
+                      </div>
+                      <h3 className="font-semibold text-white">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-stone-400">{item.text}</p>
+                    </CardContent>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-16">
+              <div>
+                <h2 className="font-serif text-2xl font-medium text-white sm:text-3xl">How booking works</h2>
+                <ol className="mt-8 space-y-6">
+                  {[
+                    "Create a free guest account with your name, phone, and email.",
+                    "Choose stay dates—we only show rooms that are available.",
+                    "Pick your room by price and complete the registration details for your stay.",
+                    "Arrive on check-in day; we verify ID and welcome you.",
+                  ].map((step, i) => (
+                    <li key={i} className="flex gap-4">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-sm font-bold text-amber-400">
+                        {i + 1}
+                      </span>
+                      <p className="pt-0.5 leading-relaxed text-stone-300">{step}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <Card className="border-stone-800 bg-gradient-to-br from-stone-900 to-stone-950 p-8 lg:p-10">
+                <div className="flex items-start gap-3">
+                  <Utensils className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden />
+                  <div>
+                    <h3 className="font-semibold text-white">Dining & local tips</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-400">
+                      Ask reception about breakfast, directions, and what to see around Accra—we love sharing local
+                      picks.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-8 rounded-xl border border-stone-800 bg-stone-950/50 p-6">
+                  <p className="text-sm font-medium text-white">Questions before you book?</p>
+                  <p className="mt-2 text-sm text-stone-400">
+                    Message or call us anytime, or reserve online—it only takes a few minutes.
+                  </p>
+                  <Button
+                    asChild
+                    className="mt-4 w-full bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400 sm:w-auto"
+                  >
+                    <Link href="/register">Start your reservation</Link>
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-stone-800 bg-amber-500/10 py-14 sm:py-16">
+          <div className="mx-auto max-w-3xl px-4 text-center">
+            <h2 className="font-serif text-2xl font-medium text-white sm:text-3xl">Ready to stay with us?</h2>
+            <p className="mt-3 text-stone-300">
+              Lock in your room today. Sign in anytime to view your booking (changes subject to lodge policy).
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 min-w-[200px] bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
+              >
+                <Link href="/register">Reserve now</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="ghost"
+                className="h-12 text-stone-200 hover:bg-stone-800 hover:text-white"
+              >
+                <Link href="/login">Guest or staff login</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-stone-800 bg-stone-950 py-10">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="font-semibold text-white">Delauds Lodge</p>
+              <p className="mt-2 text-sm text-stone-500">Comfortable stays · Accra, Ghana</p>
+            </div>
+            <div className="flex flex-col gap-2 text-sm">
+              <Link href="/login" className="text-stone-400 hover:text-amber-400">
+                Guest & staff login
+              </Link>
+              <Link href="/register" className="text-stone-400 hover:text-amber-400">
+                New guest registration
+              </Link>
+            </div>
+          </div>
+
+          <Collapsible className="mt-10 border-t border-stone-800 pt-8">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-stone-400">
+              <span>Demo & technical access</span>
+              <span className="text-stone-600">+</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-3 text-sm text-stone-500">
+              <p>For testing: run <code className="text-stone-400">npm run db:seed</code>, then:</p>
+              <ul className="space-y-1 font-mono text-xs text-stone-400">
+                <li>admin@hotel.gh / admin123</li>
+                <li>reception@hotel.gh / reception123</li>
+                <li>guest@hotel.gh / client123</li>
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <p className="mt-8 text-center text-xs text-stone-600">
+            Photography via Unsplash for demo — use your own images in production.
+          </p>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }
