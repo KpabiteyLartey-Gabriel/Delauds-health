@@ -162,9 +162,13 @@ export default function HomePage() {
               </div>
               <div className="flex-1">
                 <p className="mt-1 text-sm leading-relaxed text-red-200/90 sm:text-base">
-                  <strong className="font-semibold text-red-300">No elevator available.</strong>
+                  <strong className="font-semibold text-red-300">
+                    No elevator available.
+                  </strong>
                   <span className="block mt-2 text-amber-300">
-                    We regret that guests with mobility impairments or those who use wheelchairs may not be able to access our accommodations.
+                    We regret that guests with mobility impairments or those who
+                    use wheelchairs may not be able to access our
+                    accommodations.
                   </span>
                 </p>
                 <div className="mt-3 flex flex-wrap gap-3">
@@ -334,7 +338,8 @@ export default function HomePage() {
                     !
                   </span>
                   <span className="text-red-300">
-                    <strong>Accessibility note:</strong> All rooms require stair access — no elevator available
+                    <strong>Accessibility note:</strong> All rooms require stair
+                    access — no elevator available
                   </span>
                 </li>
               </ul>
@@ -432,9 +437,10 @@ export default function HomePage() {
                 Accessibility information
               </div>
               <p className="mt-3 text-sm text-stone-400">
-                Please note: Waterhouse Lodge does not have an elevator and is not wheelchair accessible.
-                All guest rooms are located on upper floors and can only be reached via stairs.
-                We apologize for any inconvenience this may cause.
+                Please note: Waterhouse Lodge does not have an elevator and is
+                not wheelchair accessible. All guest rooms are located on upper
+                floors and can only be reached via stairs. We apologize for any
+                inconvenience this may cause.
               </p>
             </div>
           </div>
@@ -559,8 +565,10 @@ export default function HomePage() {
 
           <div className="mt-6 rounded-lg border border-red-800/30 bg-red-950/10 p-4">
             <p className="text-center text-xs text-red-400">
-              ⚠️ Accessibility Notice: Waterhouse Lodge has no elevator and is not wheelchair accessible. 
-              All rooms require stair access. Guests with mobility impairments are advised to consider alternative accommodations.
+              ⚠️ Accessibility Notice: Waterhouse Lodge has no elevator and is
+              not wheelchair accessible. All rooms require stair access. Guests
+              with mobility impairments are advised to consider alternative
+              accommodations.
             </p>
           </div>
 
