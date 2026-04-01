@@ -1,4 +1,21 @@
-import mongoose, { Schema, model, models } from "mongoose"
+import mongoose, { Schema, model, models } from "mongoose";
+
+const StoreItemSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 200 },
+    category: {
+      type: String,
+      required: true,
+      enum: ["toiletries", "bedding", "towels", "amenities", "other"],
+    },
+    quantity: { type: Number, required: true, min: 0, default: 0 },
+    unit: { type: String, required: true, trim: true, maxlength: 50 },
+    priceGhs: { type: Number, min: 0 },
+    description: { type: String, trim: true, maxlength: 500 },
+    lowStockThreshold: { type: Number, required: true, min: 0, default: 5 },
+  },
+  { timestamps: true },
+);
 
 const UserSchema = new Schema(
   {
@@ -20,17 +37,23 @@ const UserSchema = new Schema(
     phone: { type: String, trim: true, maxlength: 40 },
   },
   { timestamps: true },
-)
+);
 
-UserSchema.index({ email: 1 })
+UserSchema.index({ email: 1 });
 
 const RoomSchema = new Schema(
   {
-    roomNumber: { type: String, required: true, unique: true, trim: true, maxlength: 20 },
+    roomNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      maxlength: 20,
+    },
     priceGhs: { type: Number, required: true, min: 0 },
   },
   { timestamps: true },
-)
+);
 
 const GuestDetailsSchema = new Schema(
   {
@@ -59,12 +82,22 @@ const GuestDetailsSchema = new Schema(
     paymentNote: { type: String },
   },
   { _id: false, strict: true },
-)
+);
 
 const BookingSchema = new Schema(
   {
-    room: { type: Schema.Types.ObjectId, ref: "Room", required: true, index: true },
-    clientUser: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    room: {
+      type: Schema.Types.ObjectId,
+      ref: "Room",
+      required: true,
+      index: true,
+    },
+    clientUser: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     checkInDate: { type: String, required: true },
     checkOutDate: { type: String, required: true },
     status: {
@@ -76,7 +109,7 @@ const BookingSchema = new Schema(
     guestDetails: { type: GuestDetailsSchema, required: true },
   },
   { timestamps: true },
-)
+);
 
 const AuditLogSchema = new Schema(
   {
@@ -87,11 +120,54 @@ const AuditLogSchema = new Schema(
     detail: { type: String, required: true, maxlength: 4000 },
   },
   { timestamps: true },
-)
+);
 
-AuditLogSchema.index({ createdAt: -1 })
+AuditLogSchema.index({ createdAt: -1 });
 
-export const User = models.User || model("User", UserSchema)
-export const Room = models.Room || model("Room", RoomSchema)
-export const Booking = models.Booking || model("Booking", BookingSchema)
-export const AuditLog = models.AuditLog || model("AuditLog", AuditLogSchema)
+const SupplyRequestItemSchema = new Schema(
+  {
+    storeItemId: {
+      type: Schema.Types.ObjectId,
+      ref: "StoreItem",
+      required: true,
+    },
+    itemName: { type: String, required: true, maxlength: 200 },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false },
+);
+
+const SupplyRequestSchema = new Schema(
+  {
+    room: {
+      type: Schema.Types.ObjectId,
+      ref: "Room",
+      required: true,
+      index: true,
+    },
+    roomNumber: { type: String, required: true },
+    items: { type: [SupplyRequestItemSchema], required: true },
+    status: {
+      type: String,
+      required: true,
+      enum: ["pending", "fulfilled"],
+      default: "pending",
+    },
+    requestedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    requestedByEmail: { type: String, required: true },
+    notes: { type: String, maxlength: 500 },
+    fulfilledBy: { type: Schema.Types.ObjectId, ref: "User" },
+    fulfilledByEmail: { type: String },
+  },
+  { timestamps: true },
+);
+SupplyRequestSchema.index({ status: 1, createdAt: -1 });
+
+export const User = models.User || model("User", UserSchema);
+export const Room = models.Room || model("Room", RoomSchema);
+export const Booking = models.Booking || model("Booking", BookingSchema);
+export const AuditLog = models.AuditLog || model("AuditLog", AuditLogSchema);
+export const StoreItem =
+  models.StoreItem || model("StoreItem", StoreItemSchema);
+export const SupplyRequest =
+  models.SupplyRequest || model("SupplyRequest", SupplyRequestSchema);

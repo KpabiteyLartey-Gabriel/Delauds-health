@@ -1,5 +1,5 @@
-import Image from "next/image"
-import Link from "next/link"
+import Image from "next/image";
+import Link from "next/link";
 import {
   BedDouble,
   CalendarRange,
@@ -11,26 +11,33 @@ import {
   Star,
   Utensils,
   Wifi,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { EXPERIENCE_IMAGE, HERO_ROOM_IMAGE, ROOM_GALLERY } from "@/lib/lodge-media"
+} from "@/components/ui/collapsible";
+import {
+  EXPERIENCE_IMAGE,
+  HERO_ROOM_IMAGE,
+  ROOM_GALLERY,
+} from "@/lib/lodge-media";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
       <header className="sticky top-0 z-50 border-b border-stone-800/80 bg-stone-950/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-white">
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-semibold tracking-tight text-white"
+          >
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
               <BedDouble className="h-5 w-5" aria-hidden />
             </span>
-            <span className="text-sm sm:text-base">Delauds Lodge</span>
+            <span className="text-sm sm:text-base">Waterhouse Lodge</span>
           </Link>
           <nav className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Button
@@ -70,8 +77,10 @@ export default function HomePage() {
                   Rest easy — your room is waiting
                 </h1>
                 <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-stone-400 sm:text-lg">
-                  Real photos of the kind of stay we offer: single rooms, fresh linens, and space to breathe. Check
-                  availability for your dates, compare nightly prices in Ghana Cedis, and book in minutes.
+                  Real photos of the kind of stay we offer: single rooms, fresh
+                  linens, and space to breathe. Check availability for your
+                  dates, compare nightly prices in Ghana Cedis, and book in
+                  minutes.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <Button
@@ -79,7 +88,10 @@ export default function HomePage() {
                     size="lg"
                     className="h-12 rounded-lg bg-amber-500 px-8 text-base font-semibold text-stone-950 shadow-lg shadow-amber-950/25 hover:bg-amber-400"
                   >
-                    <Link href="/register" className="inline-flex items-center gap-2">
+                    <Link
+                      href="/register"
+                      className="inline-flex items-center gap-2"
+                    >
                       Book a reservation
                       <ChevronRight className="h-4 w-4" aria-hidden />
                     </Link>
@@ -95,7 +107,10 @@ export default function HomePage() {
                 </div>
                 <p className="mt-6 text-sm text-stone-500">
                   Walk-ins welcome at reception.{" "}
-                  <Link href="/login" className="font-medium text-amber-400/90 underline-offset-4 hover:underline">
+                  <Link
+                    href="/login"
+                    className="font-medium text-amber-400/90 underline-offset-4 hover:underline"
+                  >
                     Staff portal
                   </Link>
                 </p>
@@ -103,7 +118,10 @@ export default function HomePage() {
 
               <div className="order-1 lg:order-2">
                 <div className="relative mx-auto max-w-xl lg:max-w-none">
-                  <div className="absolute -right-4 -top-4 hidden h-24 w-24 rounded-2xl border border-amber-500/20 bg-amber-500/5 lg:block" aria-hidden />
+                  <div
+                    className="absolute -right-4 -top-4 hidden h-24 w-24 rounded-2xl border border-amber-500/20 bg-amber-500/5 lg:block"
+                    aria-hidden
+                  />
                   <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-800 shadow-2xl shadow-black/50 sm:aspect-[5/4] lg:aspect-[4/5] lg:min-h-[420px]">
                     <Image
                       src={HERO_ROOM_IMAGE}
@@ -118,7 +136,8 @@ export default function HomePage() {
                       aria-hidden
                     />
                     <p className="absolute bottom-4 left-4 right-4 rounded-lg bg-stone-950/75 px-4 py-2 text-center text-xs text-stone-200 backdrop-blur-sm sm:text-sm">
-                      Fresh linens · Calm spaces designed for a good night&apos;s rest
+                      Fresh linens · Calm spaces designed for a good
+                      night&apos;s rest
                     </p>
                   </div>
                 </div>
@@ -131,10 +150,13 @@ export default function HomePage() {
         <section className="border-b border-stone-800 bg-stone-900/35 py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="max-w-2xl">
-              <h2 className="font-serif text-3xl font-medium text-white sm:text-4xl">Our rooms</h2>
+              <h2 className="font-serif text-3xl font-medium text-white sm:text-4xl">
+                Our rooms
+              </h2>
               <p className="mt-4 text-lg leading-relaxed text-stone-400">
-                All singles — so you always know what you are booking. Pick the tier and price that match your trip;
-                photos below illustrate the calm, tidy standard we keep across the lodge.
+                All singles — so you always know what you are booking. Pick the
+                tier and price that match your trip; photos below illustrate the
+                calm, tidy standard we keep across the lodge.
               </p>
             </div>
 
@@ -154,8 +176,12 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="p-6 sm:p-7">
-                    <h3 className="font-serif text-xl font-medium text-white">{room.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-400">{room.caption}</p>
+                    <h3 className="font-serif text-xl font-medium text-white">
+                      {room.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-400">
+                      {room.caption}
+                    </p>
                     <Button
                       asChild
                       variant="link"
@@ -166,6 +192,53 @@ export default function HomePage() {
                   </div>
                 </article>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Location maps + directions */}
+        <section className="border-b border-stone-800 bg-stone-950/70 py-14 sm:py-16">
+          <div className="mx-auto max-w-6xl px-4">
+            <h2 className="font-serif text-3xl font-medium text-white sm:text-4xl">
+              Find Waterhouse Lodge
+            </h2>
+            <p className="mt-3 max-w-3xl text-stone-300">
+              See our location in Accra and get directions instantly with Google
+              Maps.
+            </p>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
+                <iframe
+                  src="https://www.google.com/maps?q=Waterhouse+Lodge+Accra+Ghana&output=embed"
+                  width="100%"
+                  height="300"
+                  loading="lazy"
+                  title="Waterhouse Lodge location map"
+                  className="min-h-[280px] w-full"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <div className="rounded-2xl border border-stone-800 bg-stone-900 p-5">
+                <p className="text-sm text-stone-400">Address (demo):</p>
+                <p className="mt-1 font-semibold text-white">
+                  Waterhouse Lodge, Accra, Ghana
+                </p>
+                <p className="mt-2 text-sm text-stone-400">
+                  Open daily 10:00–22:00. Reception desk on site.
+                </p>
+                <Button
+                  asChild
+                  className="mt-6 w-full bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
+                >
+                  <a
+                    href="https://www.google.com/maps/dir/?api=1&destination=Waterhouse+Lodge+Accra+Ghana"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Get directions
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
@@ -183,18 +256,24 @@ export default function HomePage() {
               />
             </div>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-amber-400/90">The experience</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-amber-400/90">
+                The experience
+              </p>
               <h2 className="mt-3 font-serif text-3xl font-medium text-white sm:text-4xl">
                 More than a bed — a base for your Accra plans
               </h2>
               <p className="mt-5 text-stone-400 leading-relaxed">
-                Whether you are in town for meetings, family, or a few quiet nights away, we keep things straightforward:
-                fair rates, helpful front desk, and registration handled the way Ghana lodging rules expect—so you can
-                focus on why you came.
+                Whether you are in town for meetings, family, or a few quiet
+                nights away, we keep things straightforward: fair rates, helpful
+                front desk, and registration handled the way Ghana lodging rules
+                expect—so you can focus on why you came.
               </p>
               <ul className="mt-8 space-y-4 text-stone-300">
                 <li className="flex gap-3">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden />
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
+                    aria-hidden
+                  />
                   Early check-in when we can — always ask before arrival day
                 </li>
                 <li className="flex gap-3">
@@ -218,25 +297,41 @@ export default function HomePage() {
         {/* Social proof */}
         <section className="border-y border-stone-800 bg-gradient-to-b from-stone-900/80 to-stone-950 py-16">
           <div className="mx-auto max-w-4xl px-4 text-center">
-            <div className="flex justify-center gap-1 text-amber-400" aria-label="5 out of 5 stars">
+            <div
+              className="flex justify-center gap-1 text-amber-400"
+              aria-label="5 out of 5 stars"
+            >
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" aria-hidden />
+                <Star
+                  key={i}
+                  className="h-5 w-5 fill-amber-400 text-amber-400"
+                  aria-hidden
+                />
               ))}
             </div>
-            <Quote className="mx-auto mt-6 h-10 w-10 text-stone-600" aria-hidden />
+            <Quote
+              className="mx-auto mt-6 h-10 w-10 text-stone-600"
+              aria-hidden
+            />
             <blockquote className="mt-4 font-serif text-xl leading-relaxed text-stone-200 sm:text-2xl">
-              &ldquo;Easy online booking, room matched the photos, and the team made check-in smooth.&rdquo;
+              &ldquo;Easy online booking, room matched the photos, and the team
+              made check-in smooth.&rdquo;
             </blockquote>
-            <p className="mt-4 text-sm text-stone-500">Sample guest quote — replace with real testimonials.</p>
+            <p className="mt-4 text-sm text-stone-500">
+              Sample guest quote — replace with real testimonials.
+            </p>
           </div>
         </section>
 
         {/* Why choose us — icon cards */}
         <section className="border-b border-stone-800 bg-stone-900/30 py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4">
-            <h2 className="text-center font-serif text-2xl font-medium text-white sm:text-3xl">Why guests choose us</h2>
+            <h2 className="text-center font-serif text-2xl font-medium text-white sm:text-3xl">
+              Why guests choose us
+            </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-stone-400">
-              Simple booking, honest pricing, and lodging registration done right.
+              Simple booking, honest pricing, and lodging registration done
+              right.
             </p>
             <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
@@ -268,7 +363,9 @@ export default function HomePage() {
                         <item.icon className="h-5 w-5" aria-hidden />
                       </div>
                       <h3 className="font-semibold text-white">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-stone-400">{item.text}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-stone-400">
+                        {item.text}
+                      </p>
                     </CardContent>
                   </Card>
                 </li>
@@ -282,7 +379,9 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl px-4">
             <div className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-16">
               <div>
-                <h2 className="font-serif text-2xl font-medium text-white sm:text-3xl">How booking works</h2>
+                <h2 className="font-serif text-2xl font-medium text-white sm:text-3xl">
+                  How booking works
+                </h2>
                 <ol className="mt-8 space-y-6">
                   {[
                     "Create a free guest account with your name, phone, and email.",
@@ -294,26 +393,36 @@ export default function HomePage() {
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-sm font-bold text-amber-400">
                         {i + 1}
                       </span>
-                      <p className="pt-0.5 leading-relaxed text-stone-300">{step}</p>
+                      <p className="pt-0.5 leading-relaxed text-stone-300">
+                        {step}
+                      </p>
                     </li>
                   ))}
                 </ol>
               </div>
               <Card className="border-stone-800 bg-gradient-to-br from-stone-900 to-stone-950 p-8 lg:p-10">
                 <div className="flex items-start gap-3">
-                  <Utensils className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden />
+                  <Utensils
+                    className="mt-0.5 h-5 w-5 shrink-0 text-amber-400"
+                    aria-hidden
+                  />
                   <div>
-                    <h3 className="font-semibold text-white">Dining & local tips</h3>
+                    <h3 className="font-semibold text-white">
+                      Dining & local tips
+                    </h3>
                     <p className="mt-2 text-sm leading-relaxed text-stone-400">
-                      Ask reception about breakfast, directions, and what to see around Accra—we love sharing local
-                      picks.
+                      Ask reception about breakfast, directions, and what to see
+                      around Accra—we love sharing local picks.
                     </p>
                   </div>
                 </div>
                 <div className="mt-8 rounded-xl border border-stone-800 bg-stone-950/50 p-6">
-                  <p className="text-sm font-medium text-white">Questions before you book?</p>
+                  <p className="text-sm font-medium text-white">
+                    Questions before you book?
+                  </p>
                   <p className="mt-2 text-sm text-stone-400">
-                    Message or call us anytime, or reserve online—it only takes a few minutes.
+                    Message or call us anytime, or reserve online—it only takes
+                    a few minutes.
                   </p>
                   <Button
                     asChild
@@ -329,9 +438,12 @@ export default function HomePage() {
 
         <section className="border-t border-stone-800 bg-amber-500/10 py-14 sm:py-16">
           <div className="mx-auto max-w-3xl px-4 text-center">
-            <h2 className="font-serif text-2xl font-medium text-white sm:text-3xl">Ready to stay with us?</h2>
+            <h2 className="font-serif text-2xl font-medium text-white sm:text-3xl">
+              Ready to stay with us?
+            </h2>
             <p className="mt-3 text-stone-300">
-              Lock in your room today. Sign in anytime to view your booking (changes subject to lodge policy).
+              Lock in your room today. Sign in anytime to view your booking
+              (changes subject to lodge policy).
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
@@ -358,14 +470,22 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="font-semibold text-white">Delauds Lodge</p>
-              <p className="mt-2 text-sm text-stone-500">Comfortable stays · Accra, Ghana</p>
+              <p className="font-semibold text-white">Waterhouse Lodge</p>
+              <p className="mt-2 text-sm text-stone-500">
+                Comfortable stays · Accra, Ghana
+              </p>
             </div>
             <div className="flex flex-col gap-2 text-sm">
-              <Link href="/login" className="text-stone-400 hover:text-amber-400">
+              <Link
+                href="/login"
+                className="text-stone-400 hover:text-amber-400"
+              >
                 Guest & staff login
               </Link>
-              <Link href="/register" className="text-stone-400 hover:text-amber-400">
+              <Link
+                href="/register"
+                className="text-stone-400 hover:text-amber-400"
+              >
                 New guest registration
               </Link>
             </div>
@@ -377,7 +497,10 @@ export default function HomePage() {
               <span className="text-stone-600">+</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4 space-y-3 text-sm text-stone-500">
-              <p>For testing: run <code className="text-stone-400">npm run db:seed</code>, then:</p>
+              <p>
+                For testing: run{" "}
+                <code className="text-stone-400">npm run db:seed</code>, then:
+              </p>
               <ul className="space-y-1 font-mono text-xs text-stone-400">
                 <li>admin@hotel.gh / admin123</li>
                 <li>reception@hotel.gh / reception123</li>
@@ -387,10 +510,11 @@ export default function HomePage() {
           </Collapsible>
 
           <p className="mt-8 text-center text-xs text-stone-600">
-            Photography via Unsplash for demo — use your own images in production.
+            Photography via Unsplash for demo — use your own images in
+            production.
           </p>
         </div>
       </footer>
     </div>
-  )
+  );
 }
