@@ -161,12 +161,8 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-red-300 sm:text-xl">
-                  ⚠️ Important Accessibility Notice
-                </h2>
                 <p className="mt-1 text-sm leading-relaxed text-red-200/90 sm:text-base">
-                  <strong className="font-semibold text-red-300">No elevator available.</strong> Our lodge is not equipped with an elevator, 
-                  and all rooms are located on upper floors accessible only by stairs. 
+                  <strong className="font-semibold text-red-300">No elevator available.</strong>
                   <span className="block mt-2 text-amber-300">
                     We regret that guests with mobility impairments or those who use wheelchairs may not be able to access our accommodations.
                   </span>
