@@ -11,6 +11,8 @@ import {
   Star,
   Utensils,
   Wifi,
+  Accessibility,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -146,6 +148,48 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* IMPORTANT: Accessibility Warning Banner */}
+        <section className="border-b border-red-800/50 bg-gradient-to-r from-red-950/30 via-red-950/20 to-red-950/30">
+          <div className="mx-auto max-w-6xl px-4 py-5 sm:py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-xl border border-red-800/40 bg-red-950/40 p-5 backdrop-blur-sm shadow-lg">
+              <div className="flex shrink-0 gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-900/60 text-red-400">
+                  <Accessibility className="h-6 w-6" aria-hidden />
+                </div>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-900/60 text-amber-500">
+                  <AlertTriangle className="h-6 w-6" aria-hidden />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-red-300 sm:text-xl">
+                  ⚠️ Important Accessibility Notice
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-red-200/90 sm:text-base">
+                  <strong className="font-semibold text-red-300">No elevator available.</strong> Our lodge is not equipped with an elevator, 
+                  and all rooms are located on upper floors accessible only by stairs. 
+                  <span className="block mt-2 text-amber-300">
+                    We regret that guests with mobility impairments or those who use wheelchairs may not be able to access our accommodations.
+                  </span>
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-900/60 px-3 py-1 text-xs font-medium text-red-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                    Stairs only
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-900/60 px-3 py-1 text-xs font-medium text-red-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                    No wheelchair access
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-900/60 px-3 py-1 text-xs font-medium text-amber-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                    Ground floor unavailable
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Room gallery */}
         <section className="border-b border-stone-800 bg-stone-900/35 py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-4">
@@ -182,6 +226,10 @@ export default function HomePage() {
                     <p className="mt-2 text-sm leading-relaxed text-stone-400">
                       {room.caption}
                     </p>
+                    <div className="mt-3 flex items-center gap-2 text-xs text-red-400">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                      Access via stairs only
+                    </div>
                     <Button
                       asChild
                       variant="link"
@@ -226,6 +274,9 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-stone-400">
                   Open daily 10:00–22:00. Reception desk on site.
                 </p>
+                <div className="mt-3 rounded-lg bg-red-950/30 p-2 text-xs text-red-300">
+                  ⚠️ No elevator access — stairs only
+                </div>
                 <Button
                   asChild
                   className="mt-6 w-full bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
@@ -281,6 +332,14 @@ export default function HomePage() {
                     ✓
                   </span>
                   Secure online booking and guest login to view your reservation
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-5 w-5 shrink-0 rounded-full bg-red-500/20 text-center text-xs leading-5 text-red-400">
+                    !
+                  </span>
+                  <span className="text-red-300">
+                    <strong>Accessibility note:</strong> All rooms require stair access — no elevator available
+                  </span>
                 </li>
               </ul>
               <Button
@@ -371,6 +430,17 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
+            <div className="mt-10 rounded-xl border border-red-800/30 bg-red-950/20 p-5 text-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-red-900/40 px-4 py-1.5 text-xs font-medium text-red-300">
+                <Accessibility className="h-3.5 w-3.5" />
+                Accessibility information
+              </div>
+              <p className="mt-3 text-sm text-stone-400">
+                Please note: Waterhouse Lodge does not have an elevator and is not wheelchair accessible.
+                All guest rooms are located on upper floors and can only be reached via stairs.
+                We apologize for any inconvenience this may cause.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -491,7 +561,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          <Collapsible className="mt-10 border-t border-stone-800 pt-8">
+          <div className="mt-6 rounded-lg border border-red-800/30 bg-red-950/10 p-4">
+            <p className="text-center text-xs text-red-400">
+              ⚠️ Accessibility Notice: Waterhouse Lodge has no elevator and is not wheelchair accessible. 
+              All rooms require stair access. Guests with mobility impairments are advised to consider alternative accommodations.
+            </p>
+          </div>
+
+          <Collapsible className="mt-6 border-t border-stone-800 pt-6">
             <CollapsibleTrigger className="flex w-full items-center justify-between text-left text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-stone-400">
               <span>Demo & technical access</span>
               <span className="text-stone-600">+</span>
