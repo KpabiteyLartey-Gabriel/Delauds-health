@@ -1,44 +1,84 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Building2 } from "lucide-react"
-import { useHotel } from "@/components/hotel/HotelProvider"
-import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Building2 } from "lucide-react";
+import { useHotel } from "@/components/hotel/HotelProvider";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const { register, ready } = useHotel()
-  const [fullName, setFullName] = useState("")
-  const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const { toast } = useToast();
+  const { register, ready } = useHotel();
+  const [fullName, setFullName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("registrationFullName") || "";
+    }
+    return "";
+  });
+  const [phone, setPhone] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("registrationPhone") || "";
+    }
+    return "";
+  });
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("registrationEmail") || "";
+    }
+    return "";
+  });
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!ready) return
-    setLoading(true)
+    e.preventDefault();
+    if (!ready) return;
+    setLoading(true);
     try {
-      const res = await register(email, password, fullName, phone)
+      const res = await register(email, password, fullName, phone);
       if ("error" in res) {
-        toast({ title: "Registration failed", description: res.error, variant: "destructive" })
-        return
+        toast({
+          title: "Registration failed",
+          description: res.error,
+          variant: "destructive",
+        });
+        return;
       }
-      toast({ title: "Account created", description: "You can book a room from the guest portal." })
-      router.replace("/client")
+      toast({
+        title: "Account created",
+        description: "You can book a room from the guest portal.",
+      });
+      router.replace("/client");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  if (!ready) return null
+  useEffect(() => {
+    localStorage.setItem("registrationFullName", fullName);
+  }, [fullName]);
+
+  useEffect(() => {
+    localStorage.setItem("registrationPhone", phone);
+  }, [phone]);
+
+  useEffect(() => {
+    localStorage.setItem("registrationEmail", email);
+  }, [email]);
+
+  if (!ready) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12">
@@ -49,22 +89,43 @@ export default function RegisterPage() {
           </div>
           <CardTitle>Guest registration</CardTitle>
           <CardDescription>
-            App account only. Full Ghana guest-register details are collected per booking.
+            App account only. Full Ghana guest-register details are collected
+            per booking.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name">Full name</Label>
-              <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="mt-1" />
+              <Input
+                id="name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="mt-1"
+              />
             </div>
             <div>
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1" />
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="mt-1"
+              />
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="mt-1"
+              />
             </div>
             <div>
               <Label htmlFor="pw">Password</Label>
@@ -78,7 +139,11 @@ export default function RegisterPage() {
                 className="mt-1"
               />
             </div>
-            <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-amber-600 hover:bg-amber-700"
+              disabled={loading}
+            >
               {loading ? "Creating…" : "Create account"}
             </Button>
           </form>
@@ -90,5 +155,5 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

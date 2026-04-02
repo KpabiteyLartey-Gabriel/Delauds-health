@@ -571,29 +571,6 @@ export default function HomePage() {
               accommodations.
             </p>
           </div>
-
-          <Collapsible className="mt-6 border-t border-stone-800 pt-6">
-            <CollapsibleTrigger className="flex w-full items-center justify-between text-left text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-stone-400">
-              <span>Demo & technical access</span>
-              <span className="text-stone-600">+</span>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4 space-y-3 text-sm text-stone-500">
-              <p>
-                For testing: run{" "}
-                <code className="text-stone-400">npm run db:seed</code>, then:
-              </p>
-              <ul className="space-y-1 font-mono text-xs text-stone-400">
-                <li>admin@hotel.gh / admin123</li>
-                <li>reception@hotel.gh / reception123</li>
-                <li>guest@hotel.gh / client123</li>
-              </ul>
-            </CollapsibleContent>
-          </Collapsible>
-
-          <p className="mt-8 text-center text-xs text-stone-600">
-            Photography via Unsplash for demo — use your own images in
-            production.
-          </p>
         </div>
       </footer>
     </div>
