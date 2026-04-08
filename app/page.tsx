@@ -113,7 +113,7 @@ export default function HomePage() {
                     href="/login"
                     className="font-medium text-amber-400/90 underline-offset-4 hover:underline"
                   >
-                    Staff portal
+                    {/* Staff portal */}
                   </Link>
                 </p>
               </div>
@@ -228,7 +228,6 @@ export default function HomePage() {
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-xs text-red-400">
                       <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                      Access via stairs only
                     </div>
                     <Button
                       asChild
@@ -267,16 +266,16 @@ export default function HomePage() {
                 />
               </div>
               <div className="rounded-2xl border border-stone-800 bg-stone-900 p-5">
-                <p className="text-sm text-stone-400">Address (demo):</p>
+                <p className="text-sm text-stone-400">Address:</p>
                 <p className="mt-1 font-semibold text-white">
                   Waterhouse Lodge, Accra, Ghana
                 </p>
                 <p className="mt-2 text-sm text-stone-400">
                   Open daily 10:00–22:00. Reception desk on site.
                 </p>
-                <div className="mt-3 rounded-lg bg-red-950/30 p-2 text-xs text-red-300">
+                {/* <div className="mt-3 rounded-lg bg-red-950/30 p-2 text-xs text-red-300">
                   ⚠️ No elevator access — stairs only
-                </div>
+                </div> */}
                 <Button
                   asChild
                   className="mt-6 w-full bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
@@ -334,13 +333,13 @@ export default function HomePage() {
                   Secure online booking and guest login to view your reservation
                 </li>
                 <li className="flex gap-3">
-                  <span className="mt-1.5 h-5 w-5 shrink-0 rounded-full bg-red-500/20 text-center text-xs leading-5 text-red-400">
+                  {/* <span className="mt-1.5 h-5 w-5 shrink-0 rounded-full bg-red-500/20 text-center text-xs leading-5 text-red-400">
                     !
-                  </span>
-                  <span className="text-red-300">
+                  </span> */}
+                  {/* <span className="text-red-300">
                     <strong>Accessibility note:</strong> All rooms require stair
                     access — no elevator available
-                  </span>
+                  </span> */}
                 </li>
               </ul>
               <Button
@@ -531,7 +530,7 @@ export default function HomePage() {
                 variant="ghost"
                 className="h-12 text-stone-200 hover:bg-stone-800 hover:text-white"
               >
-                <Link href="/login">Guest or staff login</Link>
+                <Link href="/login">Guest login</Link>
               </Button>
             </div>
           </div>
@@ -552,7 +551,7 @@ export default function HomePage() {
                 href="/login"
                 className="text-stone-400 hover:text-amber-400"
               >
-                Guest & staff login
+                Guest login
               </Link>
               <Link
                 href="/register"
@@ -564,12 +563,12 @@ export default function HomePage() {
           </div>
 
           <div className="mt-6 rounded-lg border border-red-800/30 bg-red-950/10 p-4">
-            <p className="text-center text-xs text-red-400">
+            {/* <p className="text-center text-xs text-red-400">
               ⚠️ Accessibility Notice: Waterhouse Lodge has no elevator and is
               not wheelchair accessible. All rooms require stair access. Guests
               with mobility impairments are advised to consider alternative
               accommodations.
-            </p>
+            </p> */}
           </div>
         </div>
       </footer>
