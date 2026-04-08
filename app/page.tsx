@@ -163,7 +163,7 @@ export default function HomePage() {
               <div className="flex-1">
                 <p className="mt-1 text-sm leading-relaxed text-red-200/90 sm:text-base">
                   <strong className="font-semibold text-red-300">
-                    No elevator available.
+                    Stairs Only
                   </strong>
                   <span className="block mt-2 text-amber-300">
                     We regret that guests with mobility impairments or those who
