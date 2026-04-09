@@ -36,19 +36,19 @@ async function main() {
   }
 
   console.info("Creating users…");
-  const adminHash = await hash("admin123");
-  const receptionHash = await hash("reception123");
-  const clientHash = await hash("client123");
+  const adminHash = await hash("Mamavi882020!");
+  const receptionHash = await hash("1,2,3rep");
+  const clientHash = await hash("1,2,3cli");
 
   await User.create([
     {
-      email: "admin@waterhouselodge.com",
+      email: "info.waterhouselodge@gmail.com",
       passwordHash: adminHash,
       role: "admin",
       fullName: "System Admin",
     },
     {
-      email: "reception@waterhouselodge.com",
+      email: "waterhouse.logde@gmail.com",
       passwordHash: receptionHash,
       role: "receptionist",
       fullName: "Front Desk",

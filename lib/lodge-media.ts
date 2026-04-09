@@ -2,7 +2,7 @@
  * Stock photography for the marketing site (Unsplash — replace with your own room photos for production).
  */
 export const HERO_ROOM_IMAGE =
-  "https://images.unsplash.com/photo-1611892440504-42a792e54d34?auto=format&fit=crop&w=1600&q=85"
+  "https://res.cloudinary.com/dfq1bz01f/image/upload/v1775760823/Gemini_Generated_Image_vuss0avuss0avuss_rm1plv.png"
 
 export const ROOM_GALLERY = [
   {
