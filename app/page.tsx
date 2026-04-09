@@ -79,7 +79,7 @@ export default function HomePage() {
                   Rest easy — your room is waiting
                 </h1>
                 <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-stone-400 sm:text-lg">
-                  Real photos of the kind of stay we offer: single rooms, fresh
+                  We offer single rooms, fresh
                   linens, and space to breathe. Check availability for your
                   dates, compare nightly prices in Ghana Cedis, and book in
                   minutes.
