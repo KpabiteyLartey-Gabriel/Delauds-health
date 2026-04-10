@@ -307,7 +307,7 @@ export default function HomePage() {
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-amber-400/90">
-                The experience
+                The conference
               </p>
               <h2 className="mt-3 font-serif text-3xl font-medium text-white sm:text-4xl">
                 More than a bed — a base for your Accra plans
