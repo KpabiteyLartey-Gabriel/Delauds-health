@@ -52,6 +52,7 @@ function seedRooms(): Room[] {
     id: `room-${100 + i + 1}`,
     roomNumber: String(100 + i + 1),
     priceGhs,
+    kind: "guest" as const,
     status: "available" as RoomStatus,
   }));
 }
@@ -95,6 +96,12 @@ export function loadState(): HotelState {
     }
     if (!parsed.occupancy) parsed.occupancy = [];
     if (!("profile" in parsed)) parsed.profile = undefined;
+    if (parsed.rooms?.length) {
+      parsed.rooms = parsed.rooms.map((r) => ({
+        ...r,
+        kind: r.kind === "conference" ? "conference" : "guest",
+      }));
+    }
     return syncRoomStatuses(parsed);
   } catch {
     return defaultState();
@@ -340,6 +347,7 @@ export function addRoom(
     id: nanoid(),
     roomNumber: roomNumber.trim(),
     priceGhs: Math.max(0, priceGhs),
+    kind: "guest",
     status: "available",
   };
   let next: HotelState = { ...state, rooms: [...state.rooms, room] };
@@ -356,7 +364,7 @@ export function updateRoom(
   state: HotelState,
   session: Session,
   roomId: string,
-  patch: Partial<Pick<Room, "roomNumber" | "priceGhs">>,
+  patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind">>,
 ): { state: HotelState } | { error: string } {
   const room = state.rooms.find((r) => r.id === roomId);
   if (!room) return { error: "Room not found." };
@@ -376,6 +384,7 @@ export function updateRoom(
           ...(patch.priceGhs !== undefined && {
             priceGhs: Math.max(0, patch.priceGhs),
           }),
+          ...(patch.kind !== undefined && { kind: patch.kind }),
         }
       : r,
   );

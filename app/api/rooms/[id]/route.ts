@@ -26,7 +26,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
-  if (parsed.data.roomNumber === undefined && parsed.data.priceGhs === undefined) {
+  if (
+    parsed.data.roomNumber === undefined &&
+    parsed.data.priceGhs === undefined &&
+    parsed.data.kind === undefined
+  ) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
   }
 
@@ -34,6 +38,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     await updateRoom(s, id, {
       roomNumber: parsed.data.roomNumber,
       priceGhs: parsed.data.priceGhs,
+      kind: parsed.data.kind,
     })
     return NextResponse.json({ ok: true })
   } catch (e) {

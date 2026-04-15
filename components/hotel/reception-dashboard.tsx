@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownCircle,
@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  ExternalLink,
   LogOut,
   Package,
   Plus,
@@ -99,6 +100,7 @@ export function ReceptionDashboard() {
   const [supplyItems, setSupplyItems] = useState<Record<string, number>>({});
   const [supplyNotes, setSupplyNotes] = useState("");
   const [supplyLoading, setSupplyLoading] = useState(false);
+  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
 
   const today = todayISO();
 
@@ -428,6 +430,14 @@ export function ReceptionDashboard() {
                   <p className="text-xl font-bold text-slate-800">
                     {r.roomNumber}
                   </p>
+                  {r.kind === "conference" ? (
+                    <Badge
+                      variant="outline"
+                      className="mt-1 border-violet-200 bg-violet-50 text-violet-800 text-[10px] px-1.5 py-0"
+                    >
+                      Conference
+                    </Badge>
+                  ) : null}
                 </div>
                 <div
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${styles.bg} ${styles.text}`}
@@ -604,6 +614,9 @@ export function ReceptionDashboard() {
                       <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                         Status
                       </TableHead>
+                      <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        Booking details
+                      </TableHead>
                       <TableHead className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
                         Actions
                       </TableHead>
@@ -615,8 +628,8 @@ export function ReceptionDashboard() {
                       const isToday =
                         b.checkInDate === today || b.checkOutDate === today;
                       return (
+                        <Fragment key={b.id}>
                         <TableRow
-                          key={b.id}
                           className={
                             isToday
                               ? "bg-sky-50/60 hover:bg-sky-50"
@@ -678,6 +691,22 @@ export function ReceptionDashboard() {
                               {b.status.replace("_", " ")}
                             </span>
                           </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() =>
+                                setExpandedBookingId((prev) =>
+                                  prev === b.id ? null : b.id,
+                                )
+                              }
+                            >
+                              {expandedBookingId === b.id
+                                ? "Hide details"
+                                : "View details"}
+                            </Button>
+                          </TableCell>
                           <TableCell className="text-right space-x-2">
                             {b.status === "booked" && (
                               <Button
@@ -723,6 +752,104 @@ export function ReceptionDashboard() {
                             )}
                           </TableCell>
                         </TableRow>
+                        {expandedBookingId === b.id ? (
+                          <TableRow className="bg-sky-50/40">
+                            <TableCell colSpan={7}>
+                              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                  Guest details used for booking
+                                </p>
+                                <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                                  <p>
+                                    <span className="font-medium">Full name:</span>{" "}
+                                    {b.guestDetails.fullName}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Nationality:</span>{" "}
+                                    {b.guestDetails.nationality}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Phone:</span>{" "}
+                                    {b.guestDetails.phone}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Email:</span>{" "}
+                                    {b.guestDetails.email}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Date of birth:</span>{" "}
+                                    {b.guestDetails.dateOfBirth || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Occupation:</span>{" "}
+                                    {b.guestDetails.occupation || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Marital status:</span>{" "}
+                                    {b.guestDetails.maritalStatus || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Permanent address:</span>{" "}
+                                    {b.guestDetails.permanentAddress || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">ID type:</span>{" "}
+                                    {b.guestDetails.idType.replace("_", " ")}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">ID number:</span>{" "}
+                                    {b.guestDetails.idNumber || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Passport number:</span>{" "}
+                                    {b.guestDetails.passportNumber || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">ETA:</span>{" "}
+                                    {b.guestDetails.eta || "—"}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Payment:</span>{" "}
+                                    {b.guestDetails.paymentMethod} /{" "}
+                                    {b.guestDetails.paymentStatus}
+                                  </p>
+                                  <p>
+                                    <span className="font-medium">Payment note:</span>{" "}
+                                    {b.guestDetails.paymentNote || "—"}
+                                  </p>
+                                </div>
+                                <div className="mt-4">
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                    Uploaded ID for check-in
+                                  </p>
+                                  {b.guestDetails.idPhotoUrl ? (
+                                    <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+                                      <img
+                                        src={b.guestDetails.idPhotoUrl}
+                                        alt={`ID uploaded for ${b.guestDetails.fullName}`}
+                                        className="h-32 w-32 rounded-md border border-slate-200 object-cover"
+                                      />
+                                      <a
+                                        href={b.guestDetails.idPhotoUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
+                                      >
+                                        Open full ID image
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                      </a>
+                                    </div>
+                                  ) : (
+                                    <p className="mt-2 text-sm text-red-600">
+                                      No uploaded ID image found for this booking.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                        </Fragment>
                       );
                     })}
                   </TableBody>

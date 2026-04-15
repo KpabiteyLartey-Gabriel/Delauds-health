@@ -70,16 +70,15 @@ async function main() {
 
   console.info("Creating rooms…");
   const prices = [450, 520, 380, 600, 410];
-  await Room.insertMany(
-    prices.map((priceGhs, i) => ({
+  await Room.insertMany([
+    ...prices.map((priceGhs, i) => ({
       roomNumber: String(100 + i + 1),
       priceGhs,
+      kind: "guest" as const,
     })),
-  );
-
-  console.info(
-    "Done. Demo logins: admin@waterhouselodge.com / admin123, reception@waterhouselodge.com / reception123, guest@waterhouselodge.com / client123",
-  );
+    { roomNumber: "106", priceGhs: 490, kind: "guest" as const },
+    { roomNumber: "CONF-1", priceGhs: 2500, kind: "conference" as const },
+  ]);
   await mongoose.disconnect();
 }
 

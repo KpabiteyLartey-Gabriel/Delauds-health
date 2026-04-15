@@ -13,6 +13,7 @@ import type {
   GuestDetailsGhana,
   HotelState,
   Room,
+  RoomKind,
   Session,
   StoreCategory,
 } from "@/lib/hotel/types";
@@ -67,10 +68,11 @@ type HotelContextValue = {
   addRoomAction: (
     roomNumber: string,
     priceGhs: number,
+    kind?: RoomKind,
   ) => Promise<{ ok: true } | { error: string }>;
   updateRoomAction: (
     roomId: string,
-    patch: Partial<Pick<Room, "roomNumber" | "priceGhs">>,
+    patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind">>,
   ) => Promise<{ ok: true } | { error: string }>;
   deleteRoomAction: (
     roomId: string,
@@ -140,25 +142,35 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       credentials: "include",
       cache: "no-store",
     });
+    const data = await res.json().catch(() => ({}));
     if (res.status === 401) {
       setSession(null);
       setState(emptyState());
       return;
     }
     if (!res.ok) {
-      const j = await parseJsonSafe(res);
-      throw new Error(j.error || "Failed to load data");
+      throw new Error(
+        (data as { error?: string }).error || "Failed to load data",
+      );
     }
-    const data = await res.json();
+    if (!data.session) {
+      setSession(null);
+      setState(emptyState());
+      return;
+    }
     setSession({
       userId: data.session.userId,
       email: data.session.email,
       role: data.session.role,
     });
+    const rawRooms = (data.rooms ?? []) as Room[];
     setState({
       profile: data.profile,
       users: data.users ?? [],
-      rooms: data.rooms ?? [],
+      rooms: rawRooms.map((r) => ({
+        ...r,
+        kind: r.kind === "conference" ? "conference" : "guest",
+      })),
       bookings: data.bookings ?? [],
       auditLog: data.auditLog ?? [],
       occupancy: data.occupancy ?? [],
@@ -340,12 +352,16 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addRoomAction = useCallback(
-    async (roomNumber: string, priceGhs: number) => {
+    async (roomNumber: string, priceGhs: number, kind?: RoomKind) => {
       const res = await fetch("/api/rooms", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomNumber, priceGhs }),
+        body: JSON.stringify({
+          roomNumber,
+          priceGhs,
+          ...(kind ? { kind } : {}),
+        }),
       });
       const data = await parseJsonSafe(res);
       if (!res.ok)
@@ -359,7 +375,7 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
   const updateRoomAction = useCallback(
     async (
       roomId: string,
-      patch: Partial<Pick<Room, "roomNumber" | "priceGhs">>,
+      patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind">>,
     ) => {
       const res = await fetch(`/api/rooms/${roomId}`, {
         method: "PATCH",

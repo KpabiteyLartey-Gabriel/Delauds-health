@@ -5,10 +5,23 @@ import { ApiError } from "@/lib/server/api-error"
 
 export const dynamic = "force-dynamic"
 
+const anonymousState = {
+  session: null as const,
+  profile: undefined,
+  users: [],
+  rooms: [],
+  bookings: [],
+  auditLog: [],
+  occupancy: [],
+  walkInClientId: undefined as string | undefined,
+  storeItems: [],
+  supplyRequests: [],
+}
+
 export async function GET() {
   const s = getSessionFromCookies()
   if (!s) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json(anonymousState)
   }
 
   try {

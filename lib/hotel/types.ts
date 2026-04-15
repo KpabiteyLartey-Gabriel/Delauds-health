@@ -20,6 +20,9 @@ export interface StoreItem {
 
 export type RoomStatus = "available" | "booked" | "occupied";
 
+/** Guest bedrooms vs bookable conference space (same booking rules). */
+export type RoomKind = "guest" | "conference";
+
 export type BookingStatus =
   | "booked"
   | "checked_in"
@@ -50,6 +53,8 @@ export interface GuestDetailsGhana {
   checkOutDateTime: string;
   idType: IdType;
   idNumber: string;
+  /** URL of ID photo on Cloudinary — required for check-in verification */
+  idPhotoUrl: string;
   eta: string;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
@@ -75,6 +80,7 @@ export interface Room {
   roomNumber: string;
   priceGhs: number;
   status: RoomStatus;
+  kind: RoomKind;
 }
 
 export interface Booking {

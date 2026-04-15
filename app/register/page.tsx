@@ -81,7 +81,7 @@ export default function RegisterPage() {
   if (!ready) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12 dark:bg-slate-950">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
@@ -147,7 +147,7 @@ export default function RegisterPage() {
               {loading ? "Creating…" : "Create account"}
             </Button>
           </form>
-          <p className="text-center text-sm text-slate-500 mt-4">
+          <p className="text-center text-sm text-slate-500 mt-4 dark:text-slate-400">
             <Link href="/login" className="text-amber-700 hover:underline">
               Already have an account
             </Link>

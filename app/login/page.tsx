@@ -46,7 +46,7 @@ export default function LoginPage() {
   if (!ready) return null
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12 dark:bg-slate-950">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
@@ -87,12 +87,12 @@ export default function LoginPage() {
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="text-center text-sm text-slate-500 mt-4">
+          <p className="text-center text-sm text-slate-500 mt-4 dark:text-slate-400">
             <Link href="/register" className="text-amber-700 hover:underline">
               New guest registration
             </Link>
             {" · "}
-            <Link href="/" className="text-slate-600 hover:underline">
+            <Link href="/" className="text-slate-600 hover:underline dark:text-slate-300">
               Home
             </Link>
           </p>

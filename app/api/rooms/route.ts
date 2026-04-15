@@ -25,7 +25,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    await addRoom(s, parsed.data.roomNumber, parsed.data.priceGhs)
+    await addRoom(
+      s,
+      parsed.data.roomNumber,
+      parsed.data.priceGhs,
+      parsed.data.kind,
+    )
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch (e) {
     if (e instanceof ApiError) {

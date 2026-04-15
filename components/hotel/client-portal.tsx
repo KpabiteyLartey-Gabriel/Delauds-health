@@ -377,6 +377,11 @@ export function ClientPortal() {
                                 <p className="text-2xl font-bold text-stone-800">
                                   {r.roomNumber}
                                 </p>
+                                {r.kind === "conference" ? (
+                                  <span className="mt-1 inline-block rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-800">
+                                    Conference
+                                  </span>
+                                ) : null}
                               </div>
                               <div
                                 className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import {
@@ -15,6 +15,7 @@ import {
   Download,
   LayoutDashboard,
   LogOut,
+  ExternalLink,
   Package,
   Pencil,
   Plus,
@@ -62,7 +63,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { StoreCategory } from "@/lib/hotel/types";
+import type { RoomKind, StoreCategory } from "@/lib/hotel/types";
 
 const STORE_CATEGORIES: { value: StoreCategory; label: string }[] = [
   { value: "toiletries", label: "🧴 Toiletries (soap, shampoo…)" },
@@ -113,9 +114,11 @@ export function AdminDashboard() {
 
   const [roomNum, setRoomNum] = useState("");
   const [roomPrice, setRoomPrice] = useState("");
+  const [newRoomKind, setNewRoomKind] = useState<RoomKind>("guest");
   const [editRoomId, setEditRoomId] = useState<string | null>(null);
   const [editNum, setEditNum] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editKind, setEditKind] = useState<RoomKind>("guest");
 
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -131,6 +134,7 @@ export function AdminDashboard() {
   );
   const [restockDelta, setRestockDelta] = useState("");
   const [fulfillLoading, setFulfillLoading] = useState<string | null>(null);
+  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
 
   const today = todayISO();
 
@@ -203,7 +207,7 @@ export function AdminDashboard() {
       });
       return;
     }
-    const r = await addRoomAction(roomNum, price);
+    const r = await addRoomAction(roomNum, price, newRoomKind);
     if ("error" in r) {
       toast({
         title: "Could not add room",
@@ -226,6 +230,7 @@ export function AdminDashboard() {
     setEditRoomId(id);
     setEditNum(r.roomNumber);
     setEditPrice(String(r.priceGhs));
+    setEditKind(r.kind === "conference" ? "conference" : "guest");
   };
 
   const saveEdit = async () => {
@@ -242,6 +247,7 @@ export function AdminDashboard() {
     const r = await updateRoomAction(editRoomId, {
       roomNumber: editNum,
       priceGhs: price,
+      kind: editKind,
     });
     if ("error" in r) {
       toast({
@@ -662,6 +668,23 @@ export function AdminDashboard() {
                       className="border-slate-200 focus:border-amber-400 focus:ring-amber-400/20"
                     />
                   </div>
+                  <div className="w-full sm:w-44">
+                    <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                      Type
+                    </Label>
+                    <Select
+                      value={newRoomKind}
+                      onValueChange={(v) => setNewRoomKind(v as RoomKind)}
+                    >
+                      <SelectTrigger className="border-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="guest">Guest room</SelectItem>
+                        <SelectItem value="conference">Conference</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button
                     onClick={handleAddRoom}
                     className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white"
@@ -704,6 +727,14 @@ export function AdminDashboard() {
                         <p className="text-3xl font-bold text-slate-800 mt-0.5">
                           {r.roomNumber}
                         </p>
+                        {r.kind === "conference" ? (
+                          <Badge
+                            variant="outline"
+                            className="mt-1.5 border-violet-300 bg-violet-50 text-violet-800 text-[10px]"
+                          >
+                            Conference
+                          </Badge>
+                        ) : null}
                       </div>
                       <div
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}
@@ -781,6 +812,23 @@ export function AdminDashboard() {
                       className="mt-1"
                     />
                   </div>
+                  <div>
+                    <Label className="text-xs font-medium text-slate-600">
+                      Type
+                    </Label>
+                    <Select
+                      value={editKind}
+                      onValueChange={(v) => setEditKind(v as RoomKind)}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="guest">Guest room</SelectItem>
+                        <SelectItem value="conference">Conference</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setEditRoomId(null)}>
@@ -835,6 +883,9 @@ export function AdminDashboard() {
                             <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                               Status
                             </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Booking details
+                            </TableHead>
                             <TableHead className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
                               Actions
                             </TableHead>
@@ -853,8 +904,8 @@ export function AdminDashboard() {
                               const statusKey =
                                 b.status as keyof typeof STATUS_STYLES;
                               return (
+                                <Fragment key={b.id}>
                                 <TableRow
-                                  key={b.id}
                                   className={
                                     idx % 2 === 0
                                       ? "bg-white hover:bg-slate-50/80"
@@ -881,6 +932,22 @@ export function AdminDashboard() {
                                     >
                                       {b.status.replace("_", " ")}
                                     </span>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs"
+                                      onClick={() =>
+                                        setExpandedBookingId((prev) =>
+                                          prev === b.id ? null : b.id,
+                                        )
+                                      }
+                                    >
+                                      {expandedBookingId === b.id
+                                        ? "Hide details"
+                                        : "View details"}
+                                    </Button>
                                   </TableCell>
                                   <TableCell className="text-right space-x-2">
                                     {b.status === "booked" && (
@@ -925,6 +992,104 @@ export function AdminDashboard() {
                                     )}
                                   </TableCell>
                                 </TableRow>
+                                {expandedBookingId === b.id ? (
+                                  <TableRow className="bg-slate-50/80">
+                                    <TableCell colSpan={7}>
+                                      <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                          Guest details used for booking
+                                        </p>
+                                        <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                                          <p>
+                                            <span className="font-medium">Full name:</span>{" "}
+                                            {b.guestDetails.fullName}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Nationality:</span>{" "}
+                                            {b.guestDetails.nationality}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Phone:</span>{" "}
+                                            {b.guestDetails.phone}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Email:</span>{" "}
+                                            {b.guestDetails.email}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Date of birth:</span>{" "}
+                                            {b.guestDetails.dateOfBirth || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Occupation:</span>{" "}
+                                            {b.guestDetails.occupation || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Marital status:</span>{" "}
+                                            {b.guestDetails.maritalStatus || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Permanent address:</span>{" "}
+                                            {b.guestDetails.permanentAddress || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">ID type:</span>{" "}
+                                            {b.guestDetails.idType.replace("_", " ")}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">ID number:</span>{" "}
+                                            {b.guestDetails.idNumber || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Passport number:</span>{" "}
+                                            {b.guestDetails.passportNumber || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">ETA:</span>{" "}
+                                            {b.guestDetails.eta || "—"}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Payment:</span>{" "}
+                                            {b.guestDetails.paymentMethod} /{" "}
+                                            {b.guestDetails.paymentStatus}
+                                          </p>
+                                          <p>
+                                            <span className="font-medium">Payment note:</span>{" "}
+                                            {b.guestDetails.paymentNote || "—"}
+                                          </p>
+                                        </div>
+                                        <div className="mt-4">
+                                          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                            Uploaded ID for check-in
+                                          </p>
+                                          {b.guestDetails.idPhotoUrl ? (
+                                            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+                                              <img
+                                                src={b.guestDetails.idPhotoUrl}
+                                                alt={`ID uploaded for ${b.guestDetails.fullName}`}
+                                                className="h-32 w-32 rounded-md border border-slate-200 object-cover"
+                                              />
+                                              <a
+                                                href={b.guestDetails.idPhotoUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
+                                              >
+                                                Open full ID image
+                                                <ExternalLink className="h-3.5 w-3.5" />
+                                              </a>
+                                            </div>
+                                          ) : (
+                                            <p className="mt-2 text-sm text-red-600">
+                                              No uploaded ID image found for this booking.
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ) : null}
+                                </Fragment>
                               );
                             })}
                         </TableBody>

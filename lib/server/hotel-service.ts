@@ -17,6 +17,7 @@ import type {
   HotelUserPublic,
   OccupancyRecord,
   Room as RoomDTO,
+  RoomKind,
   RoomStatus,
   AuditEntry,
   UserRole,
@@ -32,6 +33,11 @@ import {
   MAX_AUDIT_DETAIL_LEN,
   WALKIN_EMAIL,
 } from "@/lib/server/constants";
+import { uploadIdPhoto } from "./cloudinary";
+
+export function normalizeRoomKind(raw: unknown): RoomKind {
+  return raw === "conference" ? "conference" : "guest";
+}
 
 function requireObjectId(id: string, label = "id"): mongoose.Types.ObjectId {
   if (!mongoose.isValidObjectId(id)) {
@@ -153,6 +159,7 @@ export async function buildHotelState(
     id: r._id.toString(),
     roomNumber: r.roomNumber,
     priceGhs: r.priceGhs,
+    kind: normalizeRoomKind((r as { kind?: string }).kind),
     status: "available",
   }));
 
@@ -210,6 +217,7 @@ export async function buildHotelState(
       description: s.description ?? undefined,
       lowStockThreshold: s.lowStockThreshold ?? 5,
     }));
+
     const audits = await AuditLog.find()
       .sort({ createdAt: -1 })
       .limit(AUDIT_LIMIT)
@@ -226,6 +234,23 @@ export async function buildHotelState(
   }
 
   if (auth.role === "admin" || auth.role === "receptionist") {
+    // Load store items for receptionist to view during supply requests
+    if (auth.role === "receptionist" && storeItems.length === 0) {
+      const storeDocs = await StoreItemModel.find()
+        .sort({ category: 1, name: 1 })
+        .lean();
+      storeItems = storeDocs.map((s) => ({
+        id: s._id.toString(),
+        name: s.name,
+        category: s.category as StoreCategory,
+        quantity: s.quantity,
+        unit: s.unit,
+        priceGhs: s.priceGhs ?? undefined,
+        description: s.description ?? undefined,
+        lowStockThreshold: s.lowStockThreshold ?? 5,
+      }));
+    }
+
     const w = await User.findOne({ email: WALKIN_EMAIL }).select("_id").lean();
     walkInClientId = w ? w._id.toString() : undefined;
 
@@ -269,6 +294,64 @@ export async function buildHotelState(
     walkInClientId,
     storeItems,
     supplyRequests,
+  };
+}
+
+/** Live counts for marketing / public widgets (no auth). */
+export async function getPublicRoomAvailabilitySummary(): Promise<{
+  total: number;
+  available: number;
+  guestAvailable: number;
+  conferenceAvailable: number;
+  /** How many conference-type spaces exist (typically 1). */
+  conferenceTotal: number;
+  /** Single conference unit status when conferenceTotal > 0. */
+  conferenceState: "none" | "available" | "booked" | "occupied";
+  booked: number;
+  occupied: number;
+}> {
+  await connectDb();
+  const roomsDocs = await Room.find().sort({ roomNumber: 1 }).lean();
+  const roomDtos: RoomDTO[] = roomsDocs.map((r) => ({
+    id: r._id.toString(),
+    roomNumber: r.roomNumber,
+    priceGhs: r.priceGhs,
+    kind: normalizeRoomKind((r as { kind?: string }).kind),
+    status: "available",
+  }));
+  const allBookingsDocs = await BookingModel.find()
+    .sort({ createdAt: -1 })
+    .lean();
+  const allBookingDtos = allBookingsDocs.map((d) =>
+    bookingLeanToDTO(d as Parameters<typeof bookingLeanToDTO>[0]),
+  );
+  const rooms = applyRoomStatuses(roomDtos, allBookingDtos);
+  const available = rooms.filter((r) => r.status === "available").length;
+  const guestAvailable = rooms.filter(
+    (r) => r.kind === "guest" && r.status === "available",
+  ).length;
+  const conferenceRooms = rooms.filter((r) => r.kind === "conference");
+  const conferenceTotal = conferenceRooms.length;
+  const conferenceAvailable = conferenceRooms.filter(
+    (r) => r.status === "available",
+  ).length;
+  let conferenceState: "none" | "available" | "booked" | "occupied" = "none";
+  if (conferenceTotal === 1) {
+    const s = conferenceRooms[0]!.status;
+    conferenceState =
+      s === "available" ? "available" : s === "booked" ? "booked" : "occupied";
+  } else if (conferenceTotal > 1) {
+    conferenceState = conferenceAvailable > 0 ? "available" : "occupied";
+  }
+  return {
+    total: rooms.length,
+    available,
+    guestAvailable,
+    conferenceAvailable,
+    conferenceTotal,
+    conferenceState,
+    booked: rooms.filter((r) => r.status === "booked").length,
+    occupied: rooms.filter((r) => r.status === "occupied").length,
   };
 }
 
@@ -354,6 +437,25 @@ export async function createBooking(
     guestDetails: input.guestDetails,
   });
 
+  // Upload ID photo to Cloudinary if it's a data URL
+  if (input.guestDetails.idPhotoUrl.startsWith("data:")) {
+    try {
+      const uploadedUrl = await uploadIdPhoto(
+        input.guestDetails.idPhotoUrl,
+        created._id.toString(),
+      );
+      await BookingModel.updateOne(
+        { _id: created._id },
+        { $set: { "guestDetails.idPhotoUrl": uploadedUrl } },
+      );
+    } catch (uploadError) {
+      // Delete the booking if upload fails
+      await BookingModel.deleteOne({ _id: created._id });
+      console.error("Cloudinary upload error:", uploadError);
+      throw new ApiError(500, "Failed to upload ID photo. Please try again.");
+    }
+  }
+
   await audit(
     auth,
     "booking_created",
@@ -394,6 +496,16 @@ export async function checkInBooking(auth: SessionPayload, bookingId: string) {
   if (dto.status !== "booked")
     throw new ApiError(400, "Only booked stays can be checked in.");
 
+  // Note: ID photo verification would be done by reception staff during check-in
+  // They compare the uploaded ID photo with the guest in person
+  const guestDetails = b.guestDetails as GuestDetailsGhana;
+  if (!guestDetails.idPhotoUrl) {
+    throw new ApiError(
+      400,
+      "No ID photo on file. Guest must upload ID photo before check-in.",
+    );
+  }
+
   const room = await Room.findById(b.room).lean();
   await BookingModel.updateOne(
     { _id: oid },
@@ -402,7 +514,7 @@ export async function checkInBooking(auth: SessionPayload, bookingId: string) {
   await audit(
     auth,
     "check_in",
-    `Checked in booking ${bookingId}, room ${room?.roomNumber?.toString() ?? String(b.room)}`,
+    `Checked in booking ${bookingId}, room ${room?.roomNumber?.toString() ?? String(b.room)}, verified with ID photo`,
   );
 }
 
@@ -434,20 +546,26 @@ export async function addRoom(
   auth: SessionPayload,
   roomNumber: string,
   priceGhs: number,
+  kind: RoomKind = "guest",
 ) {
   if (auth.role !== "admin") throw new ApiError(403, "Forbidden");
   await connectDb();
   const num = roomNumber.trim();
   const exists = await Room.findOne({ roomNumber: num }).lean();
   if (exists) throw new ApiError(409, "Room number already exists.");
-  await Room.create({ roomNumber: num, priceGhs });
-  await audit(auth, "room_added", `Room ${num} at GHS ${priceGhs}`);
+  const k = normalizeRoomKind(kind);
+  await Room.create({ roomNumber: num, priceGhs, kind: k });
+  await audit(
+    auth,
+    "room_added",
+    `Room ${num} (${k}) at GHS ${priceGhs}`,
+  );
 }
 
 export async function updateRoom(
   auth: SessionPayload,
   roomId: string,
-  patch: { roomNumber?: string; priceGhs?: number },
+  patch: { roomNumber?: string; priceGhs?: number; kind?: RoomKind },
 ) {
   if (auth.role !== "admin") throw new ApiError(403, "Forbidden");
   await connectDb();
@@ -473,6 +591,9 @@ export async function updateRoom(
         }),
         ...(patch.priceGhs !== undefined && {
           priceGhs: Math.max(0, patch.priceGhs),
+        }),
+        ...(patch.kind !== undefined && {
+          kind: normalizeRoomKind(patch.kind),
         }),
       },
     },
@@ -530,6 +651,7 @@ export async function guestRegisterCsv(): Promise<string> {
     "check_out_dt",
     "id_type",
     "id_number",
+    "id_photo_url",
     "eta",
     "payment_method",
     "payment_status",
@@ -569,6 +691,7 @@ export async function guestRegisterCsv(): Promise<string> {
         esc(g.checkOutDateTime),
         esc(g.idType),
         esc(g.idNumber),
+        esc(g.idPhotoUrl ?? ""),
         esc(g.eta),
         esc(g.paymentMethod),
         esc(g.paymentStatus),

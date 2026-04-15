@@ -51,6 +51,11 @@ const RoomSchema = new Schema(
       maxlength: 20,
     },
     priceGhs: { type: Number, required: true, min: 0 },
+    kind: {
+      type: String,
+      enum: ["guest", "conference"],
+      default: "guest",
+    },
   },
   { timestamps: true },
 );
@@ -76,6 +81,7 @@ const GuestDetailsSchema = new Schema(
       enum: ["ghana_card", "passport", "drivers_license"],
     },
     idNumber: { type: String, required: true },
+    idPhotoUrl: { type: String, required: true },
     eta: { type: String, required: true },
     paymentMethod: { type: String, required: true, enum: ["momo", "cash"] },
     paymentStatus: { type: String, required: true, enum: ["pending", "paid"] },
