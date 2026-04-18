@@ -31,35 +31,69 @@ export async function POST(req: Request) {
   }
 
   try {
-    const created = await createBooking(s, {
-      roomId: parsed.data.roomId,
-      clientUserId: parsed.data.clientUserId,
-      checkInDate: parsed.data.checkInDate,
-      checkOutDate: parsed.data.checkOutDate,
-      guestDetails: parsed.data.guestDetails,
-    })
+    const requestedRoomIds = parsed.data.roomIds?.length
+      ? parsed.data.roomIds
+      : parsed.data.roomId
+        ? [parsed.data.roomId]
+        : []
 
-    if (!created.requiresOnlinePayment) {
+    if (requestedRoomIds.length === 0) {
+      return NextResponse.json({ error: "roomId or roomIds is required" }, { status: 400 })
+    }
+
+    const roomIds = [...new Set(requestedRoomIds)]
+
+    const createdList = [] as Array<{
+      bookingId: string
+      amountKobo: number
+      paymentMethod: string
+      requiresOnlinePayment: boolean
+    }>
+
+    for (const roomId of roomIds) {
+      const created = await createBooking(s, {
+        roomId,
+        clientUserId: parsed.data.clientUserId,
+        checkInDate: parsed.data.checkInDate,
+        checkOutDate: parsed.data.checkOutDate,
+        guestDetails: parsed.data.guestDetails,
+      })
+      createdList.push(created)
+    }
+
+    const firstCreated = createdList[0]
+    if (!firstCreated) {
+      return NextResponse.json({ error: "No rooms selected" }, { status: 400 })
+    }
+
+    if (!firstCreated.requiresOnlinePayment) {
       return NextResponse.json(
         {
           ok: true,
-          bookingId: created.bookingId,
+          bookingId: firstCreated.bookingId,
+          bookingIds: createdList.map((b) => b.bookingId),
           status: "pending_payment",
-          paymentMethod: created.paymentMethod,
+          paymentMethod: firstCreated.paymentMethod,
         },
         { status: 201 },
       )
     }
 
-    const reference = `WB_${created.bookingId}_${Date.now()}`
+    const totalAmountKobo = createdList.reduce((sum, b) => sum + b.amountKobo, 0)
+    const reference =
+      createdList.length > 1
+        ? `WB_MULTI_${Date.now()}`
+        : `WB_${firstCreated.bookingId}_${Date.now()}`
     const payment = await initializePaystackTransaction({
       email: parsed.data.guestDetails.email,
-      amountKobo: created.amountKobo,
+      amountKobo: totalAmountKobo,
       reference,
       callbackUrl: getPaystackCallbackUrl(),
       metadata: {
-        bookingId: created.bookingId,
-        roomId: parsed.data.roomId,
+        bookingId: firstCreated.bookingId,
+        bookingIds: createdList.map((b) => b.bookingId),
+        bookingIdsCsv: createdList.map((b) => b.bookingId).join(","),
+        roomIds,
         clientUserId: parsed.data.clientUserId,
         paymentMethod: parsed.data.guestDetails.paymentMethod,
       },
@@ -68,9 +102,10 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: true,
-        bookingId: created.bookingId,
+        bookingId: firstCreated.bookingId,
+        bookingIds: createdList.map((b) => b.bookingId),
         status: "pending_payment",
-        paymentMethod: created.paymentMethod,
+        paymentMethod: firstCreated.paymentMethod,
         paystackAuthorizationUrl: payment.authorization_url,
         paystackReference: payment.reference,
       },

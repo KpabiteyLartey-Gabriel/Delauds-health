@@ -39,8 +39,29 @@ export async function GET(req: Request) {
       );
     }
 
-    const bookingId = tx.metadata?.bookingId;
-    if (!bookingId) {
+    const csvBookingIds = tx.metadata?.bookingIdsCsv
+      ?.split(",")
+      .map((id) => id.trim())
+      .filter(Boolean) ?? [];
+    const rawBookingIds = tx.metadata?.bookingIds;
+    const metadataBookingIds = Array.isArray(rawBookingIds)
+      ? rawBookingIds.map((id) => String(id).trim()).filter(Boolean)
+      : typeof rawBookingIds === "string"
+        ? rawBookingIds
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
+        : [];
+    const singleBookingId = tx.metadata?.bookingId?.trim();
+    const targets = csvBookingIds.length > 0
+      ? csvBookingIds
+      : metadataBookingIds.length > 0
+        ? metadataBookingIds
+      : singleBookingId
+        ? [singleBookingId]
+        : [];
+
+    if (targets.length === 0) {
       return redirectWithStatus(
         req.url,
         "/client",
@@ -49,8 +70,14 @@ export async function GET(req: Request) {
       );
     }
 
-    await confirmPaystackBookingPayment(bookingId, reference);
-    return redirectWithStatus(req.url, "/client", "success", "Payment confirmed");
+    await Promise.all(
+      targets.map((bookingId) => confirmPaystackBookingPayment(bookingId, reference)),
+    );
+    const msg =
+      targets.length > 1
+        ? `Payment confirmed for ${targets.length} bookings`
+        : "Payment confirmed";
+    return redirectWithStatus(req.url, "/client", "success", msg);
   } catch (e) {
     console.error("[paystack/callback]", e);
     return redirectWithStatus(

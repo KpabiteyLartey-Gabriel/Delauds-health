@@ -52,19 +52,32 @@ export const guestDetailsSchema = z
     }
   });
 
-export const createBookingSchema = z.object({
-  roomId: z.string().trim().min(1),
-  clientUserId: z.string().trim().min(1),
-  checkInDate: z
-    .string()
-    .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/),
-  checkOutDate: z
-    .string()
-    .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/),
-  guestDetails: guestDetailsSchema,
-});
+export const createBookingSchema = z
+  .object({
+    roomId: z.string().trim().min(1).optional(),
+    roomIds: z.array(z.string().trim().min(1)).min(1).max(10).optional(),
+    clientUserId: z.string().trim().min(1),
+    checkInDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
+    checkOutDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
+    guestDetails: guestDetailsSchema,
+  })
+  .superRefine((data, ctx) => {
+    const hasRoomId = !!data.roomId;
+    const hasRoomIds = Array.isArray(data.roomIds) && data.roomIds.length > 0;
+    if (!hasRoomId && !hasRoomIds) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "roomId or roomIds is required",
+        path: ["roomId"],
+      });
+    }
+  });
 
 export const patchRoomSchema = z.object({
   roomNumber: z.string().trim().min(1).max(20).optional(),

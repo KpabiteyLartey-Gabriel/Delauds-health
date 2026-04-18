@@ -22,8 +22,11 @@ type PaystackVerifyResponse = {
     };
     metadata?: {
       bookingId?: string;
+      bookingIds?: string[] | string;
+      bookingIdsCsv?: string;
       clientUserId?: string;
       roomId?: string;
+      roomIds?: string[] | string;
     };
   };
 };

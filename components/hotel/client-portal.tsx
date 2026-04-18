@@ -208,20 +208,11 @@ export function ClientPortal() {
     }
 
     const needsPaystack = guest.paymentMethod !== "cash";
-    if (needsPaystack && pickedRoomIds.length > 1) {
-      toast({
-        title: "Choose one room",
-        description: "Paystack checkout currently supports one room at a time.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setBooking(true);
 
     if (needsPaystack) {
-      const roomId = pickedRoomIds[0]!;
-      const r = await createBooking(roomId, session.userId, cin, cout, guest);
+      const r = await createBooking(pickedRoomIds, session.userId, cin, cout, guest);
       setBooking(false);
       if ("error" in r) {
         toast({

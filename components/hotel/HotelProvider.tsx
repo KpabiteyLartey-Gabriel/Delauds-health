@@ -50,7 +50,7 @@ type HotelContextValue = {
   ) => Promise<{ ok: true } | { error: string }>;
   refresh: () => Promise<void>;
   createBooking: (
-    roomId: string,
+    roomIdOrIds: string | string[],
     clientUserId: string,
     checkInDate: string,
     checkOutDate: string,
@@ -59,6 +59,7 @@ type HotelContextValue = {
     | {
         ok: true;
         bookingId: string;
+        bookingIds?: string[];
         status: "pending_payment";
         paystackAuthorizationUrl?: string;
       }
@@ -297,7 +298,7 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
 
   const createBooking = useCallback(
     async (
-      roomId: string,
+      roomIdOrIds: string | string[],
       clientUserId: string,
       checkInDate: string,
       checkOutDate: string,
@@ -308,7 +309,9 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          roomId,
+          ...(Array.isArray(roomIdOrIds)
+            ? { roomIds: roomIdOrIds }
+            : { roomId: roomIdOrIds }),
           clientUserId,
           checkInDate,
           checkOutDate,

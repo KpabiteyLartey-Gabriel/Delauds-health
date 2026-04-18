@@ -10,6 +10,8 @@ type PaystackWebhookEvent = {
     reference?: string;
     metadata?: {
       bookingId?: string;
+      bookingIds?: string[] | string;
+      bookingIdsCsv?: string;
     };
   };
 };
@@ -46,14 +48,36 @@ export async function POST(req: Request) {
   }
 
   const reference = payload.data?.reference?.trim();
-  const bookingId = payload.data?.metadata?.bookingId?.trim();
+  const csvBookingIds = payload.data?.metadata?.bookingIdsCsv
+    ?.split(",")
+    .map((id) => id.trim())
+    .filter(Boolean) ?? [];
+  const rawBookingIds = payload.data?.metadata?.bookingIds;
+  const metadataBookingIds = Array.isArray(rawBookingIds)
+    ? rawBookingIds.map((id) => String(id).trim()).filter(Boolean)
+    : typeof rawBookingIds === "string"
+      ? rawBookingIds
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : [];
+  const singleBookingId = payload.data?.metadata?.bookingId?.trim();
+  const targets = csvBookingIds.length > 0
+    ? csvBookingIds
+    : metadataBookingIds.length > 0
+      ? metadataBookingIds
+    : singleBookingId
+      ? [singleBookingId]
+      : [];
 
-  if (!reference || !bookingId) {
+  if (!reference || targets.length === 0) {
     return NextResponse.json({ ok: true });
   }
 
   try {
-    await confirmPaystackBookingPayment(bookingId, reference);
+    await Promise.all(
+      targets.map((bookingId) => confirmPaystackBookingPayment(bookingId, reference)),
+    );
   } catch (err) {
     console.error("[paystack/webhook]", err);
   }
