@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   BedDouble,
   Building2,
@@ -34,8 +34,15 @@ import {
   emptyGuestDetails,
   validateGuestDetails,
 } from "@/components/hotel/ghana-guest-form";
+import { PolicyNotice } from "@/components/policy-notice";
 
 const STATUS_CONFIG = {
+  pending_payment: {
+    label: "Pending Payment",
+    color: "bg-sky-100 text-sky-700 border-sky-200",
+    dot: "bg-sky-500",
+    icon: <Clock className="h-3.5 w-3.5" />,
+  },
   booked: {
     label: "Confirmed",
     color: "bg-amber-100 text-amber-700 border-amber-200",
@@ -62,8 +69,13 @@ const STATUS_CONFIG = {
   },
 };
 
+function rateUnit(kind: "guest" | "conference") {
+  return kind === "conference" ? "day" : "night";
+}
+
 export function ClientPortal() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const {
     state,
@@ -106,6 +118,26 @@ export function ClientPortal() {
   const activeBooking = mine.find(
     (b) => b.status === "checked_in" || b.status === "booked",
   );
+
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const message = searchParams.get("message");
+    if (!payment) return;
+
+    if (payment === "success") {
+      toast({
+        title: "Payment confirmed",
+        description: message || "Your booking is now confirmed.",
+      });
+    } else {
+      toast({
+        title: "Payment not confirmed",
+        description: message || "Please try payment again or contact support.",
+        variant: "destructive",
+      });
+    }
+    router.replace("/client");
+  }, [searchParams, toast, router]);
 
   if (!ready) {
     return (
@@ -175,7 +207,42 @@ export function ClientPortal() {
       return;
     }
 
+    const needsPaystack = guest.paymentMethod !== "cash";
+    if (needsPaystack && pickedRoomIds.length > 1) {
+      toast({
+        title: "Choose one room",
+        description: "Paystack checkout currently supports one room at a time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setBooking(true);
+
+    if (needsPaystack) {
+      const roomId = pickedRoomIds[0]!;
+      const r = await createBooking(roomId, session.userId, cin, cout, guest);
+      setBooking(false);
+      if ("error" in r) {
+        toast({
+          title: "Booking failed",
+          description: r.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!r.paystackAuthorizationUrl) {
+        toast({
+          title: "Payment setup failed",
+          description: "Could not start Paystack checkout.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = r.paystackAuthorizationUrl;
+      return;
+    }
+
     let successCount = 0;
     for (const roomId of pickedRoomIds) {
       const r = await createBooking(roomId, session.userId, cin, cout, guest);
@@ -193,8 +260,9 @@ export function ClientPortal() {
 
     if (successCount > 0) {
       toast({
-        title: `🎉 ${successCount} room${successCount > 1 ? "s" : ""} booked!`,
-        description: "Present your ID at reception on arrival.",
+        title: `${successCount} room${successCount > 1 ? "s" : ""} pending payment`,
+        description:
+          "Cash bookings stay pending until reception or admin confirms payment.",
       });
       setPickedRoomIds([]);
       setBookOpen(false);
@@ -211,6 +279,10 @@ export function ClientPortal() {
     (sum, r) => sum + r.priceGhs * nights(cin, cout),
     0,
   );
+  const summaryUnit =
+    pickedRooms.length > 0 && pickedRooms.every((room) => room.kind === "conference")
+      ? "day"
+      : "night";
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -306,6 +378,8 @@ export function ClientPortal() {
             </div>
 
             <div className="px-6 py-5 space-y-5">
+              <PolicyNotice className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" />
+
               {/* Date pickers */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -358,17 +432,21 @@ export function ClientPortal() {
                         const n = nights(cin, cout);
                         const total = r.priceGhs * n;
                         const selected = pickedRoomIds.includes(r.id);
+                        const roomDescription =
+                          r.description?.trim() ||
+                          "No description added by admin yet.";
                         return (
                           <button
                             key={r.id}
                             type="button"
                             onClick={() => toggleRoom(r.id)}
-                            className={`text-left border rounded-xl p-4 transition-all ${
+                            className={`text-left border rounded-xl overflow-hidden transition-all ${
                               selected
                                 ? "border-amber-500 bg-amber-50 ring-2 ring-amber-400/30"
                                 : "border-stone-200 hover:border-amber-300 hover:bg-amber-50/50 bg-white"
                             }`}
                           >
+                            <div className="p-4">
                             <div className="flex items-start justify-between">
                               <div>
                                 <p className="text-xs text-stone-400 font-medium uppercase tracking-wider">
@@ -395,16 +473,19 @@ export function ClientPortal() {
                                 )}
                               </div>
                             </div>
+                            <p className="mt-3 text-sm font-medium leading-relaxed text-stone-600">
+                              {roomDescription}
+                            </p>
                             <div className="mt-3 flex items-end justify-between">
                               <div>
                                 <p className="text-lg font-bold text-amber-600">
                                   {formatGhs(r.priceGhs)}
                                   <span className="text-xs font-normal text-stone-400 ml-1">
-                                    / night
+                                    / {rateUnit(r.kind)}
                                   </span>
                                 </p>
                                 <p className="text-xs text-stone-400 mt-0.5">
-                                  {n} night{n !== 1 ? "s" : ""} · Total{" "}
+                                  {n} {rateUnit(r.kind)}{n !== 1 ? "s" : ""} · Total{" "}
                                   <span className="font-semibold text-stone-600">
                                     {formatGhs(total)}
                                   </span>
@@ -415,6 +496,7 @@ export function ClientPortal() {
                                 Available
                               </span>
                             </div>
+                            </div>{/* end p-4 */}
                           </button>
                         );
                       })}
@@ -450,8 +532,7 @@ export function ClientPortal() {
                         >
                           <CalendarRange className="h-4 w-4 mr-2" />
                           Book {pickedRoomIds.length} room
-                          {pickedRoomIds.length > 1 ? "s" : ""} ·{" "}
-                          {nights(cin, cout)} night
+                          {pickedRoomIds.length > 1 ? "s" : ""} · {nights(cin, cout)} {summaryUnit}
                           {nights(cin, cout) !== 1 ? "s" : ""}
                           <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
@@ -488,7 +569,7 @@ export function ClientPortal() {
               <BedDouble className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm font-medium">No bookings yet</p>
               <p className="text-xs mt-1">
-                Your confirmed stays will appear here.
+                Your pending and confirmed stays will appear here.
               </p>
             </div>
           ) : (
@@ -499,8 +580,13 @@ export function ClientPortal() {
                 const n = nights(b.checkInDate, b.checkOutDate);
                 const today = todayISO();
                 const isUpcoming =
-                  b.checkInDate > today && b.status === "booked";
+                  b.checkInDate > today &&
+                  (b.status === "booked" || b.status === "pending_payment");
                 const isActive = b.status === "checked_in";
+                const roomDescription = room
+                  ? room.description?.trim() ||
+                    "No description added by admin yet."
+                  : "";
 
                 return (
                   <div
@@ -575,6 +661,11 @@ export function ClientPortal() {
                               {n} night{n !== 1 ? "s" : ""} ·{" "}
                               {room ? formatGhs(room.priceGhs * n) : "—"} total
                             </p>
+                            {room ? (
+                              <p className="mt-1 text-xs font-medium leading-relaxed text-stone-600">
+                                {roomDescription}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
 
@@ -610,7 +701,7 @@ export function ClientPortal() {
                       </p>
 
                       {/* Cancel button */}
-                      {b.status === "booked" && !isWalkin && (
+                      {(b.status === "booked" || b.status === "pending_payment") && !isWalkin && (
                         <div className="mt-3">
                           <Button
                             variant="outline"
@@ -674,7 +765,9 @@ export function ClientPortal() {
                 <p className="font-semibold text-stone-700">{cout}</p>
               </div>
               <div>
-                <p className="text-xs text-amber-600 font-medium">Nights</p>
+                <p className="text-xs text-amber-600 font-medium">
+                  {summaryUnit === "day" ? "Days" : "Nights"}
+                </p>
                 <p className="font-semibold text-stone-700">
                   {nights(cin, cout)}
                 </p>
@@ -698,11 +791,13 @@ export function ClientPortal() {
                   className="inline-flex items-center gap-1.5 bg-white border border-amber-300 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full"
                 >
                   <BedDouble className="h-3 w-3" />
-                  Room {r.roomNumber} · {formatGhs(r.priceGhs)}/night
+                  Room {r.roomNumber} · {formatGhs(r.priceGhs)}/{rateUnit(r.kind)}
                 </span>
               ))}
             </div>
           </div>
+
+          <PolicyNotice className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" />
 
           <div className="border-t border-stone-100 pt-4">
             <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">

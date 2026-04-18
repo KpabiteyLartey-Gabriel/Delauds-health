@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   UserPlus,
   Users,
+  WalletCards,
 } from "lucide-react";
 import { useHotel } from "@/components/hotel/HotelProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +51,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -65,11 +67,26 @@ import {
 import type { GuestDetailsGhana } from "@/lib/hotel/types";
 
 const STATUS_STYLES: Record<string, string> = {
+  pending_payment: "bg-sky-100 text-sky-700 border-sky-200",
   booked: "bg-amber-100 text-amber-700 border-amber-200",
   checked_in: "bg-emerald-100 text-emerald-700 border-emerald-200",
   checked_out: "bg-slate-100 text-slate-600 border-slate-200",
   cancelled: "bg-red-100 text-red-500 border-red-200",
 };
+
+function rateUnit(kind: "guest" | "conference") {
+  return kind === "conference" ? "day" : "night";
+}
+
+function paymentMethodLabel(method: string) {
+  const map: Record<string, string> = {
+    momo: "MTN Mobile Money",
+    telecel_cash: "Telecel Cash",
+    card: "Card",
+    cash: "Cash",
+  };
+  return map[method] ?? method;
+}
 
 export function ReceptionDashboard() {
   const router = useRouter();
@@ -82,6 +99,8 @@ export function ReceptionDashboard() {
     createBooking,
     checkInAction,
     checkOutAction,
+    confirmPaymentAction,
+    resendCashEmailAction,
     roomFree,
     createSupplyRequestAction,
   } = useHotel();
@@ -101,6 +120,9 @@ export function ReceptionDashboard() {
   const [supplyNotes, setSupplyNotes] = useState("");
   const [supplyLoading, setSupplyLoading] = useState(false);
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
+  const [cashReceivedByBooking, setCashReceivedByBooking] = useState<Record<string, string>>({});
+  const [confirmingCashBookingId, setConfirmingCashBookingId] = useState<string | null>(null);
+  const [resendingCashEmailBookingId, setResendingCashEmailBookingId] = useState<string | null>(null);
 
   const today = todayISO();
 
@@ -158,6 +180,39 @@ export function ReceptionDashboard() {
     () => state.supplyRequests.filter((r) => r.status === "pending").length,
     [state.supplyRequests],
   );
+
+  const paidBookings = useMemo(() => {
+    return state.bookings
+      .filter((b) => b.guestDetails.paymentStatus === "paid")
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((b) => {
+        const room = state.rooms.find((r) => r.id === b.roomId);
+        const start = new Date(`${b.checkInDate}T00:00:00Z`).getTime();
+        const end = new Date(`${b.checkOutDate}T00:00:00Z`).getTime();
+        const nights = Math.max(
+          1,
+          Math.round((end - start) / (1000 * 60 * 60 * 24)),
+        );
+        const note = b.guestDetails.paymentNote ?? "";
+        const paystackRef = note.match(/paystack_ref:([^|\s]+)/)?.[1];
+        const cashRef = note.match(/cash_ref:([^|\s]+)/)?.[1];
+        const cashReceived = note.match(/cash_received_ghs:([0-9]+(?:\.[0-9]+)?)/)?.[1];
+        const amountGhs =
+          cashReceived !== undefined
+            ? Number(cashReceived)
+            : (room?.priceGhs ?? 0) * nights;
+        const reference = paystackRef ?? cashRef ?? "—";
+        const paidAtIso = note.match(/paid_at:([^|\s]+)/)?.[1] ?? null;
+        return {
+          booking: b,
+          room,
+          amountGhs,
+          reference,
+          paidAtIso,
+        };
+      });
+  }, [state.bookings, state.rooms]);
 
   const occupiedOrBookedRooms = useMemo(
     () =>
@@ -219,6 +274,15 @@ export function ReceptionDashboard() {
       toast({ title: "Room no longer available", variant: "destructive" });
       return;
     }
+    if (guest.paymentMethod !== "cash") {
+      toast({
+        title: "Walk-in payment method",
+        description:
+          "For walk-ins, use cash and confirm payment from the bookings table.",
+        variant: "destructive",
+      });
+      return;
+    }
     const r = await createBooking(roomId, walkId, cin, cout, guest);
     if ("error" in r) {
       toast({
@@ -228,7 +292,7 @@ export function ReceptionDashboard() {
       });
       return;
     }
-    toast({ title: "✅ Walk-in booking created" });
+    toast({ title: "✅ Walk-in booking created (pending payment)" });
     setWalkOpen(false);
     setRoomId("");
   };
@@ -421,7 +485,7 @@ export function ReceptionDashboard() {
             return (
               <div
                 key={r.id}
-                className={`border rounded-xl px-4 py-3 ${styles.bg} flex items-center justify-between`}
+                className={`border rounded-xl px-4 py-3 ${styles.bg} flex items-start justify-between gap-3`}
               >
                 <div>
                   <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
@@ -437,6 +501,11 @@ export function ReceptionDashboard() {
                     >
                       Conference
                     </Badge>
+                  ) : null}
+                  {r.description ? (
+                    <p className="mt-1 text-[11px] leading-snug text-slate-500">
+                      {r.description}
+                    </p>
                   ) : null}
                 </div>
                 <div
@@ -560,43 +629,62 @@ export function ReceptionDashboard() {
           </CardContent>
         </Card>
 
-        {/* ── Bookings search & table ────────────────────────── */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-sky-500" />
-                  All bookings
-                </CardTitle>
-                <CardDescription>
-                  Search by guest name, phone or email
-                </CardDescription>
-              </div>
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  className="pl-9 border-slate-200 focus:border-sky-400 focus:ring-sky-400/20"
-                  placeholder="Search guest…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredBookings.length === 0 ? (
-              <div className="flex flex-col items-center py-16 text-slate-400">
-                <CalendarClock className="h-10 w-10 mb-3 opacity-30" />
-                <p className="text-sm">
-                  {search
-                    ? "No bookings match your search."
-                    : "No bookings yet."}
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-xl overflow-hidden border border-slate-100">
-                <Table>
+        {/* ── Bookings + Payments tabs ───────────────────────── */}
+        <Tabs defaultValue="bookings" className="space-y-4">
+          <TabsList className="bg-white border border-slate-200 rounded-xl p-1 h-auto inline-flex">
+            <TabsTrigger
+              value="bookings"
+              className="data-[state=active]:bg-sky-600 data-[state=active]:text-white"
+            >
+              <ClipboardList className="h-4 w-4 mr-1.5" />
+              Bookings
+            </TabsTrigger>
+            <TabsTrigger
+              value="payments"
+              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+            >
+              <WalletCards className="h-4 w-4 mr-1.5" />
+              Payments ({paidBookings.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="bookings">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4 text-sky-500" />
+                      All bookings
+                    </CardTitle>
+                    <CardDescription>
+                      Search by guest name, phone or email
+                    </CardDescription>
+                  </div>
+                  <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      className="pl-9 border-slate-200 focus:border-sky-400 focus:ring-sky-400/20"
+                      placeholder="Search guest…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {filteredBookings.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 text-slate-400">
+                    <CalendarClock className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm">
+                      {search
+                        ? "No bookings match your search."
+                        : "No bookings yet."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden border border-slate-100">
+                    <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 hover:bg-slate-50">
                       <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -708,6 +796,17 @@ export function ReceptionDashboard() {
                             </Button>
                           </TableCell>
                           <TableCell className="text-right space-x-2">
+                            {b.status === "pending_payment" &&
+                              b.guestDetails.paymentMethod === "cash" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  onClick={() => setExpandedBookingId(b.id)}
+                                >
+                                  Cash details
+                                </Button>
+                              )}
                             {b.status === "booked" && (
                               <Button
                                 size="sm"
@@ -845,6 +944,131 @@ export function ReceptionDashboard() {
                                     </p>
                                   )}
                                 </div>
+
+                                {b.status === "pending_payment" &&
+                                b.guestDetails.paymentMethod === "cash" ? (
+                                  <div className="mt-4 border-t border-slate-200 pt-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                                      Confirm cash payment
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                                      <div className="w-full sm:max-w-[220px]">
+                                        <Label className="text-xs font-medium text-slate-600">
+                                          Amount received (GHS)
+                                        </Label>
+                                        <Input
+                                          type="number"
+                                          min="0"
+                                          step="0.01"
+                                          value={cashReceivedByBooking[b.id] ?? ""}
+                                          onChange={(e) =>
+                                            setCashReceivedByBooking((prev) => ({
+                                              ...prev,
+                                              [b.id]: e.target.value,
+                                            }))
+                                          }
+                                          placeholder="e.g. 230"
+                                        />
+                                      </div>
+                                      <Button
+                                        className="bg-sky-600 hover:bg-sky-700 text-white"
+                                        disabled={confirmingCashBookingId === b.id}
+                                        onClick={async () => {
+                                          const amount = Number(
+                                            cashReceivedByBooking[b.id] ?? "",
+                                          );
+                                          if (!Number.isFinite(amount) || amount <= 0) {
+                                            toast({
+                                              title: "Enter valid amount",
+                                              description:
+                                                "Input the cash amount received before generating cash ref.",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+                                          setConfirmingCashBookingId(b.id);
+                                          const r = await confirmPaymentAction(b.id, amount);
+                                          setConfirmingCashBookingId(null);
+                                          if ("error" in r) {
+                                            toast({
+                                              title: "Cash confirmation failed",
+                                              description: r.error,
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+                                          setCashReceivedByBooking((prev) => ({
+                                            ...prev,
+                                            [b.id]: "",
+                                          }));
+                                          toast({
+                                            title: "✅ Cash payment confirmed",
+                                            description:
+                                              "Cash ref generated, emails sent, and booking updated to booked.",
+                                          });
+                                        }}
+                                      >
+                                        {confirmingCashBookingId === b.id
+                                          ? "Generating..."
+                                          : "Generate cash ref & confirm"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                        {b.guestDetails.paymentMethod === "cash" &&
+                                        b.guestDetails.paymentStatus === "paid" ? (
+                                          <div className="mt-4 border-t border-slate-200 pt-4">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                Cash email status
+                                              </p>
+                                              <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                                                  (b.guestDetails.paymentNote ?? "").includes("cash_email_status:sent")
+                                                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                                    : (b.guestDetails.paymentNote ?? "").includes("cash_email_status:failed")
+                                                      ? "bg-red-100 text-red-700 border-red-200"
+                                                      : "bg-amber-100 text-amber-700 border-amber-200"
+                                                }`}
+                                              >
+                                                {(b.guestDetails.paymentNote ?? "").includes("cash_email_status:sent")
+                                                  ? "sent"
+                                                  : (b.guestDetails.paymentNote ?? "").includes("cash_email_status:failed")
+                                                    ? "failed"
+                                                    : "pending"}
+                                              </span>
+                                            </div>
+                                            <div className="mt-2">
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={resendingCashEmailBookingId === b.id}
+                                                onClick={async () => {
+                                                  setResendingCashEmailBookingId(b.id);
+                                                  const r = await resendCashEmailAction(b.id);
+                                                  setResendingCashEmailBookingId(null);
+                                                  if ("error" in r) {
+                                                    toast({
+                                                      title: "Resend failed",
+                                                      description: r.error,
+                                                      variant: "destructive",
+                                                    });
+                                                    return;
+                                                  }
+                                                  toast({
+                                                    title: "✅ Cash emails resent",
+                                                    description: "Guest and admin confirmation emails were resent.",
+                                                  });
+                                                }}
+                                              >
+                                                {resendingCashEmailBookingId === b.id
+                                                  ? "Resending..."
+                                                  : "Resend cash emails"}
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ) : null}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -853,11 +1077,110 @@ export function ReceptionDashboard() {
                       );
                     })}
                   </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                  <WalletCards className="h-4 w-4 text-emerald-600" />
+                  Received payments
+                </CardTitle>
+                <CardDescription>
+                  Payment ledger for all successful bookings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {paidBookings.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 text-slate-400">
+                    <WalletCards className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm">No received payments yet.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden border border-slate-100">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 hover:bg-slate-50">
+                          <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Paid at
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Guest
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Contact
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Room
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Method
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Amount
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Reference
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paidBookings.map((p, idx) => (
+                          <TableRow
+                            key={p.booking.id}
+                            className={
+                              idx % 2 === 0
+                                ? "bg-white hover:bg-slate-50/80"
+                                : "bg-slate-50/50 hover:bg-slate-50"
+                            }
+                          >
+                            <TableCell className="text-xs text-slate-600 whitespace-nowrap">
+                              {p.paidAtIso
+                                ? format(parseISO(p.paidAtIso), "MMM d, yyyy HH:mm")
+                                : format(parseISO(p.booking.createdAt), "MMM d, yyyy HH:mm")}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-slate-800 text-sm">
+                                  {p.booking.guestDetails.fullName}
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  {p.booking.guestDetails.email}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700">
+                              {p.booking.guestDetails.phone}
+                            </TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center justify-center bg-slate-900 text-white text-xs font-bold rounded-lg px-2.5 py-1">
+                                {p.room?.roomNumber ?? "—"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700">
+                              {paymentMethodLabel(p.booking.guestDetails.paymentMethod)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-semibold text-emerald-700">
+                              {formatGhs(p.amountGhs)}
+                            </TableCell>
+                            <TableCell className="text-xs font-mono text-slate-600">
+                              {p.reference}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* ── Walk-in dialog ─────────────────────────────────── */}
@@ -926,7 +1249,7 @@ export function ReceptionDashboard() {
                 <SelectContent>
                   {availableForWalkin.map((r) => (
                     <SelectItem key={r.id} value={r.id}>
-                      Room {r.roomNumber} — {formatGhs(r.priceGhs)}/night
+                      Room {r.roomNumber} — {formatGhs(r.priceGhs)}/{rateUnit(r.kind)}
                     </SelectItem>
                   ))}
                 </SelectContent>

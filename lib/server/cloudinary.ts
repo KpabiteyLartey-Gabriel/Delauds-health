@@ -38,6 +38,27 @@ export async function uploadIdPhoto(
 }
 
 /**
+ * Upload a room image to Cloudinary
+ */
+export async function uploadRoomImage(
+  base64Data: string,
+  roomId: string,
+): Promise<string> {
+  try {
+    const result = await cloudinary.uploader.upload(base64Data, {
+      folder: `hotel/rooms/${roomId}`,
+      resource_type: "auto",
+      public_id: `room-${Date.now()}`,
+      overwrite: false,
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error("Cloudinary room image upload error:", error);
+    throw new Error("Failed to upload room image. Please try again.");
+  }
+}
+
+/**
  * Delete ID photo from Cloudinary
  * @param publicId Public ID of the image in Cloudinary
  */

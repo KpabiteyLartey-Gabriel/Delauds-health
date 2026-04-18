@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PolicyNotice } from "@/components/policy-notice";
 
 export function emptyGuestDetails(
   checkInDate: string,
@@ -35,7 +36,7 @@ export function emptyGuestDetails(
     idNumber: "",
     idPhotoUrl: "",
     eta: "15:00",
-    paymentMethod: "momo",
+    paymentMethod: "card",
     paymentStatus: "pending",
     paymentNote: "",
   };
@@ -360,28 +361,18 @@ export function GhanaGuestForm({ value, onChange, idPrefix = "g" }: Props) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="momo">MTN Mobile Money</SelectItem>
+              <SelectItem value="telecel_cash">Telecel Cash</SelectItem>
+              <SelectItem value="card">Card</SelectItem>
               <SelectItem value="cash">Cash</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
           <Label>Payment status</Label>
-          <Select
-            value={value.paymentStatus}
-            onValueChange={(v) =>
-              set({ paymentStatus: v as GuestDetailsGhana["paymentStatus"] })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input value="Pending (set automatically)" disabled />
         </div>
       </div>
+      <PolicyNotice className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" />
       <div>
         <Label htmlFor={p("paynote")}>
           Payment note (MoMo ref, last digits, etc.)

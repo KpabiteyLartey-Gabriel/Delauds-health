@@ -56,6 +56,8 @@ const RoomSchema = new Schema(
       enum: ["guest", "conference"],
       default: "guest",
     },
+    description: { type: String, trim: true, maxlength: 500 },
+    imageUrls: [{ type: String, trim: true }],
   },
   { timestamps: true },
 );
@@ -83,7 +85,11 @@ const GuestDetailsSchema = new Schema(
     idNumber: { type: String, required: true },
     idPhotoUrl: { type: String, required: true },
     eta: { type: String, required: true },
-    paymentMethod: { type: String, required: true, enum: ["momo", "cash"] },
+    paymentMethod: {
+      type: String,
+      required: true,
+      enum: ["momo", "telecel_cash", "card", "cash"],
+    },
     paymentStatus: { type: String, required: true, enum: ["pending", "paid"] },
     paymentNote: { type: String },
   },
@@ -109,8 +115,14 @@ const BookingSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ["booked", "checked_in", "checked_out", "cancelled"],
-      default: "booked",
+      enum: [
+        "pending_payment",
+        "booked",
+        "checked_in",
+        "checked_out",
+        "cancelled",
+      ],
+      default: "pending_payment",
     },
     guestDetails: { type: GuestDetailsSchema, required: true },
   },
@@ -171,6 +183,12 @@ SupplyRequestSchema.index({ status: 1, createdAt: -1 });
 
 export const User = models.User || model("User", UserSchema);
 export const Room = models.Room || model("Room", RoomSchema);
+if (process.env.NODE_ENV !== "production") {
+  delete models.Booking;
+  delete models.AuditLog;
+  delete models.StoreItem;
+  delete models.SupplyRequest;
+}
 export const Booking = models.Booking || model("Booking", BookingSchema);
 export const AuditLog = models.AuditLog || model("AuditLog", AuditLogSchema);
 export const StoreItem =

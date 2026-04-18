@@ -24,6 +24,7 @@ export type RoomStatus = "available" | "booked" | "occupied";
 export type RoomKind = "guest" | "conference";
 
 export type BookingStatus =
+  | "pending_payment"
   | "booked"
   | "checked_in"
   | "checked_out"
@@ -31,7 +32,7 @@ export type BookingStatus =
 
 export type IdType = "ghana_card" | "passport" | "drivers_license";
 
-export type PaymentMethod = "momo" | "cash";
+export type PaymentMethod = "momo" | "telecel_cash" | "card" | "cash";
 
 export type PaymentStatus = "pending" | "paid";
 
@@ -81,6 +82,8 @@ export interface Room {
   priceGhs: number;
   status: RoomStatus;
   kind: RoomKind;
+  description?: string;
+  imageUrls?: string[];
 }
 
 export interface Booking {

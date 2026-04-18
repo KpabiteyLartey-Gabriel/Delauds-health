@@ -29,7 +29,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (
     parsed.data.roomNumber === undefined &&
     parsed.data.priceGhs === undefined &&
-    parsed.data.kind === undefined
+    parsed.data.kind === undefined &&
+    parsed.data.description === undefined
   ) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
   }
@@ -39,6 +40,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       roomNumber: parsed.data.roomNumber,
       priceGhs: parsed.data.priceGhs,
       kind: parsed.data.kind,
+      description: parsed.data.description,
+      imageUrls: parsed.data.imageUrls,
     })
     return NextResponse.json({ ok: true })
   } catch (e) {

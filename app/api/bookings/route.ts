@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { getSessionFromCookies } from "@/lib/server/auth/session-cookie"
 import { createBookingSchema } from "@/lib/server/validation"
 import { createBooking } from "@/lib/server/hotel-service"
+import {
+  getPaystackCallbackUrl,
+  initializePaystackTransaction,
+} from "@/lib/server/paystack"
 import { ApiError } from "@/lib/server/api-error"
 
 export const dynamic = "force-dynamic"
@@ -27,17 +31,60 @@ export async function POST(req: Request) {
   }
 
   try {
-    await createBooking(s, {
+    const created = await createBooking(s, {
       roomId: parsed.data.roomId,
       clientUserId: parsed.data.clientUserId,
       checkInDate: parsed.data.checkInDate,
       checkOutDate: parsed.data.checkOutDate,
       guestDetails: parsed.data.guestDetails,
     })
-    return NextResponse.json({ ok: true }, { status: 201 })
+
+    if (!created.requiresOnlinePayment) {
+      return NextResponse.json(
+        {
+          ok: true,
+          bookingId: created.bookingId,
+          status: "pending_payment",
+          paymentMethod: created.paymentMethod,
+        },
+        { status: 201 },
+      )
+    }
+
+    const reference = `WB_${created.bookingId}_${Date.now()}`
+    const payment = await initializePaystackTransaction({
+      email: parsed.data.guestDetails.email,
+      amountKobo: created.amountKobo,
+      reference,
+      callbackUrl: getPaystackCallbackUrl(),
+      metadata: {
+        bookingId: created.bookingId,
+        roomId: parsed.data.roomId,
+        clientUserId: parsed.data.clientUserId,
+        paymentMethod: parsed.data.guestDetails.paymentMethod,
+      },
+    })
+
+    return NextResponse.json(
+      {
+        ok: true,
+        bookingId: created.bookingId,
+        status: "pending_payment",
+        paymentMethod: created.paymentMethod,
+        paystackAuthorizationUrl: payment.authorization_url,
+        paystackReference: payment.reference,
+      },
+      { status: 201 },
+    )
   } catch (e) {
     if (e instanceof ApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })
+    }
+    if (e instanceof Error) {
+      return NextResponse.json(
+        { error: `Payment setup failed: ${e.message}` },
+        { status: 502 },
+      )
     }
     console.error("[bookings]", e)
     return NextResponse.json({ error: "Server error" }, { status: 500 })

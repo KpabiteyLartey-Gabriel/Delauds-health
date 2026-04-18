@@ -36,7 +36,7 @@ export const guestDetailsSchema = z
     idNumber: z.string().trim().min(1).max(120),
     idPhotoUrl: z.string().trim().min(1),
     eta: z.string().trim().min(1).max(120),
-    paymentMethod: z.enum(["momo", "cash"]),
+    paymentMethod: z.enum(["momo", "telecel_cash", "card", "cash"]),
     paymentStatus: z.enum(["pending", "paid"]),
     paymentNote: z.string().max(500).optional(),
   })
@@ -70,10 +70,14 @@ export const patchRoomSchema = z.object({
   roomNumber: z.string().trim().min(1).max(20).optional(),
   priceGhs: z.coerce.number().min(0).optional(),
   kind: z.enum(["guest", "conference"]).optional(),
+  description: z.string().trim().max(500).optional(),
+  imageUrls: z.array(z.string().min(1)).max(5).optional(),
 });
 
 export const createRoomSchema = z.object({
   roomNumber: z.string().trim().min(1).max(20),
   priceGhs: z.coerce.number().min(0),
   kind: z.enum(["guest", "conference"]).optional(),
+  description: z.string().trim().max(500).optional(),
+  imageUrls: z.array(z.string().min(1)).max(5).optional(),
 });

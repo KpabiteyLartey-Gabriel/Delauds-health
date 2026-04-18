@@ -12,7 +12,15 @@ export default function ResponsiveCalendar({ value, onChange }: ResponsiveCalend
   return (
     <div className="w-full flex justify-center overflow-x-auto">
       <Calendar
-        onChange={onChange}
+        onChange={(nextValue) => {
+          if (nextValue instanceof Date) {
+            onChange(nextValue);
+            return;
+          }
+          if (Array.isArray(nextValue) && nextValue[0] instanceof Date) {
+            onChange(nextValue[0]);
+          }
+        }}
         value={value}
         className="bg-white rounded-lg shadow p-2"
         tileClassName={({ date, view }) =>

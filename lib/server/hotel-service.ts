@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { connectDb } from "@/lib/mongodb/connect";
+import { sendCashPaymentConfirmationEmails } from "@/lib/server/cash-email";
 import {
   User,
   Room,
@@ -16,6 +17,7 @@ import type {
   HotelState,
   HotelUserPublic,
   OccupancyRecord,
+  PaymentMethod,
   Room as RoomDTO,
   RoomKind,
   RoomStatus,
@@ -33,7 +35,27 @@ import {
   MAX_AUDIT_DETAIL_LEN,
   WALKIN_EMAIL,
 } from "@/lib/server/constants";
-import { uploadIdPhoto } from "./cloudinary";
+import { uploadIdPhoto, uploadRoomImage } from "./cloudinary";
+
+async function processRoomImages(
+  roomId: string,
+  imageUrls: string[],
+): Promise<string[]> {
+  return Promise.all(
+    imageUrls.map((url) => {
+      if (url.startsWith("data:")) {
+        return uploadRoomImage(url, roomId);
+      }
+      return url;
+    }),
+  );
+}
+
+function normalizeRoomDescription(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  return trimmed ? trimmed : undefined;
+}
 
 export function normalizeRoomKind(raw: unknown): RoomKind {
   return raw === "conference" ? "conference" : "guest";
@@ -129,6 +151,50 @@ function isRoomFreeForDates(
   });
 }
 
+function bookingAmountKobo(priceGhs: number, checkInDate: string, checkOutDate: string) {
+  const ms =
+    new Date(`${checkOutDate}T00:00:00Z`).getTime() -
+    new Date(`${checkInDate}T00:00:00Z`).getTime();
+  const units = Math.max(1, Math.round(ms / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.round(priceGhs * units * 100));
+}
+
+function getNoteTag(note: string, key: string): string | undefined {
+  return note.match(new RegExp(`${key}:([^|\\s]+)`))?.[1];
+}
+
+function upsertNoteTag(note: string, key: string, value: string): string {
+  const parts = note
+    .split("|")
+    .map((p) => p.trim())
+    .filter((p) => p && !p.startsWith(`${key}:`));
+  parts.push(`${key}:${value}`);
+  return parts.join(" | ");
+}
+
+async function sendCashEmailsWithRetry(data: Parameters<typeof sendCashPaymentConfirmationEmails>[0]) {
+  try {
+    await sendCashPaymentConfirmationEmails(data);
+    return { ok: true as const, attempts: 1 as const };
+  } catch (firstErr) {
+    try {
+      await sendCashPaymentConfirmationEmails(data);
+      return { ok: true as const, attempts: 2 as const };
+    } catch (secondErr) {
+      return {
+        ok: false as const,
+        attempts: 2 as const,
+        error: secondErr instanceof Error ? secondErr : firstErr,
+      };
+    }
+  }
+}
+
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return "unknown error";
+}
+
 export async function findUserByEmailForLogin(email: string) {
   await connectDb();
   return User.findOne({ email: email.toLowerCase().trim() })
@@ -160,6 +226,12 @@ export async function buildHotelState(
     roomNumber: r.roomNumber,
     priceGhs: r.priceGhs,
     kind: normalizeRoomKind((r as { kind?: string }).kind),
+    description: normalizeRoomDescription(
+      (r as { description?: string }).description,
+    ),
+    imageUrls: Array.isArray((r as { imageUrls?: string[] }).imageUrls)
+      ? (r as { imageUrls?: string[] }).imageUrls
+      : undefined,
     status: "available",
   }));
 
@@ -317,6 +389,12 @@ export async function getPublicRoomAvailabilitySummary(): Promise<{
     roomNumber: r.roomNumber,
     priceGhs: r.priceGhs,
     kind: normalizeRoomKind((r as { kind?: string }).kind),
+    description: normalizeRoomDescription(
+      (r as { description?: string }).description,
+    ),
+    imageUrls: Array.isArray((r as { imageUrls?: string[] }).imageUrls)
+      ? (r as { imageUrls?: string[] }).imageUrls
+      : undefined,
     status: "available",
   }));
   const allBookingsDocs = await BookingModel.find()
@@ -433,8 +511,11 @@ export async function createBooking(
     clientUser: userOid,
     checkInDate: input.checkInDate,
     checkOutDate: input.checkOutDate,
-    status: "booked",
-    guestDetails: input.guestDetails,
+    status: "pending_payment",
+    guestDetails: {
+      ...input.guestDetails,
+      paymentStatus: "pending",
+    },
   });
 
   // Upload ID photo to Cloudinary if it's a data URL
@@ -456,10 +537,281 @@ export async function createBooking(
     }
   }
 
+  const amountKobo = bookingAmountKobo(
+    room.priceGhs,
+    input.checkInDate,
+    input.checkOutDate,
+  );
+
   await audit(
     auth,
     "booking_created",
-    `Booking ${created._id.toString()} for room ${room.roomNumber}, ${input.checkInDate}–${input.checkOutDate}`,
+    `Booking ${created._id.toString()} for room ${room.roomNumber}, ${input.checkInDate}–${input.checkOutDate} created as pending payment`,
+  );
+
+  return {
+    bookingId: created._id.toString(),
+    amountKobo,
+    roomNumber: room.roomNumber,
+    requiresOnlinePayment: input.guestDetails.paymentMethod !== "cash",
+    paymentMethod: input.guestDetails.paymentMethod as PaymentMethod,
+  };
+}
+
+export async function confirmPendingCashBooking(
+  auth: SessionPayload,
+  bookingId: string,
+  cashAmountGhs: number,
+) {
+  if (auth.role !== "admin" && auth.role !== "receptionist") {
+    throw new ApiError(403, "Forbidden");
+  }
+  if (!Number.isFinite(cashAmountGhs) || cashAmountGhs <= 0) {
+    throw new ApiError(400, "Cash amount must be greater than 0.");
+  }
+  await connectDb();
+  const oid = requireObjectId(bookingId, "bookingId");
+  const b = await BookingModel.findById(oid).lean();
+  if (!b) throw new ApiError(404, "Booking not found");
+
+  const dto = bookingLeanToDTO(b as Parameters<typeof bookingLeanToDTO>[0]);
+  if (dto.status !== "pending_payment") {
+    throw new ApiError(400, "Only pending bookings can be confirmed.");
+  }
+
+  const guest = b.guestDetails as GuestDetailsGhana;
+  if (guest.paymentMethod !== "cash") {
+    throw new ApiError(400, "Only cash bookings can be manually confirmed.");
+  }
+
+  const existing = await BookingModel.find({
+    room: b.room,
+    status: { $in: ["booked", "checked_in"] },
+  }).lean();
+  const existingDtos = existing.map((d) =>
+    bookingLeanToDTO(d as Parameters<typeof bookingLeanToDTO>[0]),
+  );
+  if (
+    !isRoomFreeForDates(
+      existingDtos,
+      b.room.toString(),
+      dto.checkInDate,
+      dto.checkOutDate,
+      dto.id,
+    )
+  ) {
+    throw new ApiError(409, "Room is no longer available for these dates.");
+  }
+
+  const room = await Room.findById(b.room).lean();
+  if (!room) throw new ApiError(404, "Room not found");
+
+  const paidAtIso = new Date().toISOString();
+  const cashReference = `WB_CASH_${bookingId}_${Date.now()}`;
+  const prevNote = guest.paymentNote?.trim();
+  const noteBase = prevNote
+    ? `${prevNote} | cash_confirmed_by_staff | cash_received_ghs:${cashAmountGhs.toFixed(2)} | cash_ref:${cashReference} | paid_at:${paidAtIso}`
+    : `cash_confirmed_by_staff | cash_received_ghs:${cashAmountGhs.toFixed(2)} | cash_ref:${cashReference} | paid_at:${paidAtIso}`;
+  let note = upsertNoteTag(noteBase, "cash_email_status", "pending");
+
+  await BookingModel.updateOne(
+    { _id: oid },
+    {
+      $set: {
+        status: "booked",
+        "guestDetails.paymentStatus": "paid",
+        "guestDetails.paymentNote": note,
+      },
+    },
+  );
+
+  await audit(
+    auth,
+    "booking_payment_confirmed_cash",
+    `Booking ${bookingId} confirmed as paid by cash (${cashAmountGhs.toFixed(2)}), ref ${cashReference}`,
+  );
+
+  const emailResult = await sendCashEmailsWithRetry({
+    bookingId,
+    guestName: guest.fullName,
+    guestEmail: guest.email,
+    guestPhone: guest.phone,
+    roomNumber: room.roomNumber,
+    checkInDate: dto.checkInDate,
+    checkOutDate: dto.checkOutDate,
+    amountReceivedGhs: cashAmountGhs,
+    cashReference,
+    confirmedByEmail: auth.email,
+  });
+
+  const existingAttempts = Number(getNoteTag(note, "cash_email_attempts") ?? "0");
+  note = upsertNoteTag(
+    upsertNoteTag(
+      upsertNoteTag(
+        note,
+        "cash_email_status",
+        emailResult.ok ? "sent" : "failed",
+      ),
+      "cash_email_attempts",
+      String(existingAttempts + emailResult.attempts),
+    ),
+    "cash_email_last_attempt_at",
+    new Date().toISOString(),
+  );
+  await BookingModel.updateOne(
+    { _id: oid },
+    { $set: { "guestDetails.paymentNote": note } },
+  );
+
+  if (!emailResult.ok) {
+    console.error("[cash-email] Failed to send cash confirmation emails", emailResult.error);
+    await audit(
+      auth,
+      "cash_email_send_failed",
+      `Booking ${bookingId}, ref ${cashReference}: ${errorMessage(emailResult.error)}`,
+    );
+  }
+}
+
+export async function resendCashPaymentEmails(
+  auth: SessionPayload,
+  bookingId: string,
+) {
+  if (auth.role !== "admin" && auth.role !== "receptionist") {
+    throw new ApiError(403, "Forbidden");
+  }
+  await connectDb();
+  const oid = requireObjectId(bookingId, "bookingId");
+  const b = await BookingModel.findById(oid).lean();
+  if (!b) throw new ApiError(404, "Booking not found");
+
+  const dto = bookingLeanToDTO(b as Parameters<typeof bookingLeanToDTO>[0]);
+  const guest = b.guestDetails as GuestDetailsGhana;
+  if (guest.paymentMethod !== "cash") {
+    throw new ApiError(400, "Only cash bookings support cash email resend.");
+  }
+  if (guest.paymentStatus !== "paid") {
+    throw new ApiError(400, "Cash email can only be resent after payment is confirmed.");
+  }
+
+  const room = await Room.findById(b.room).lean();
+  if (!room) throw new ApiError(404, "Room not found");
+
+  const noteBase = guest.paymentNote?.trim() ?? "";
+  const cashReference = getNoteTag(noteBase, "cash_ref") ?? `WB_CASH_${bookingId}_${Date.now()}`;
+  const amountFromNote = Number(getNoteTag(noteBase, "cash_received_ghs") ?? "NaN");
+  const amountReceivedGhs = Number.isFinite(amountFromNote)
+    ? amountFromNote
+    : bookingAmountKobo(room.priceGhs, dto.checkInDate, dto.checkOutDate) / 100;
+
+  const emailResult = await sendCashEmailsWithRetry({
+    bookingId,
+    guestName: guest.fullName,
+    guestEmail: guest.email,
+    guestPhone: guest.phone,
+    roomNumber: room.roomNumber,
+    checkInDate: dto.checkInDate,
+    checkOutDate: dto.checkOutDate,
+    amountReceivedGhs,
+    cashReference,
+    confirmedByEmail: auth.email,
+  });
+
+  const existingAttempts = Number(getNoteTag(noteBase, "cash_email_attempts") ?? "0");
+  const nextNote = upsertNoteTag(
+    upsertNoteTag(
+      upsertNoteTag(
+        upsertNoteTag(
+          upsertNoteTag(noteBase, "cash_ref", cashReference),
+          "cash_received_ghs",
+          amountReceivedGhs.toFixed(2),
+        ),
+        "cash_email_status",
+        emailResult.ok ? "sent" : "failed",
+      ),
+      "cash_email_attempts",
+      String(existingAttempts + emailResult.attempts),
+    ),
+    "cash_email_last_attempt_at",
+    new Date().toISOString(),
+  );
+  await BookingModel.updateOne(
+    { _id: oid },
+    { $set: { "guestDetails.paymentNote": nextNote } },
+  );
+
+  if (!emailResult.ok) {
+    await audit(
+      auth,
+      "cash_email_resend_failed",
+      `Booking ${bookingId}, ref ${cashReference}: ${errorMessage(emailResult.error)}`,
+    );
+    throw new ApiError(502, "Email resend failed. Please check SMTP and try again.");
+  }
+
+  await audit(
+    auth,
+    "cash_email_resent",
+    `Booking ${bookingId}, ref ${cashReference}: emails resent successfully`,
+  );
+}
+
+export async function confirmPaystackBookingPayment(
+  bookingId: string,
+  reference: string,
+) {
+  await connectDb();
+  const oid = requireObjectId(bookingId, "bookingId");
+  const b = await BookingModel.findById(oid).lean();
+  if (!b) throw new ApiError(404, "Booking not found");
+
+  const dto = bookingLeanToDTO(b as Parameters<typeof bookingLeanToDTO>[0]);
+  if (dto.status === "booked" || dto.status === "checked_in") {
+    return;
+  }
+  if (dto.status !== "pending_payment") {
+    throw new ApiError(400, "Booking cannot be confirmed from this state.");
+  }
+
+  const guest = b.guestDetails as GuestDetailsGhana;
+  if (guest.paymentMethod === "cash") {
+    throw new ApiError(400, "Cash booking must be confirmed by staff.");
+  }
+
+  const existing = await BookingModel.find({
+    room: b.room,
+    status: { $in: ["booked", "checked_in"] },
+  }).lean();
+  const existingDtos = existing.map((d) =>
+    bookingLeanToDTO(d as Parameters<typeof bookingLeanToDTO>[0]),
+  );
+  if (
+    !isRoomFreeForDates(
+      existingDtos,
+      b.room.toString(),
+      dto.checkInDate,
+      dto.checkOutDate,
+      dto.id,
+    )
+  ) {
+    throw new ApiError(409, "Room is no longer available for these dates.");
+  }
+
+  const paidAtIso = new Date().toISOString();
+  const prevNote = guest.paymentNote?.trim();
+  const note = prevNote
+    ? `${prevNote} | paystack_ref:${reference} | paid_at:${paidAtIso}`
+    : `paystack_ref:${reference} | paid_at:${paidAtIso}`;
+
+  await BookingModel.updateOne(
+    { _id: oid },
+    {
+      $set: {
+        status: "booked",
+        "guestDetails.paymentStatus": "paid",
+        "guestDetails.paymentNote": note,
+      },
+    },
   );
 }
 
@@ -547,6 +899,8 @@ export async function addRoom(
   roomNumber: string,
   priceGhs: number,
   kind: RoomKind = "guest",
+  description?: string,
+  imageUrls?: string[],
 ) {
   if (auth.role !== "admin") throw new ApiError(403, "Forbidden");
   await connectDb();
@@ -554,7 +908,27 @@ export async function addRoom(
   const exists = await Room.findOne({ roomNumber: num }).lean();
   if (exists) throw new ApiError(409, "Room number already exists.");
   const k = normalizeRoomKind(kind);
-  await Room.create({ roomNumber: num, priceGhs, kind: k });
+  const normalizedDescription = normalizeRoomDescription(description);
+  const created = await Room.create({
+    roomNumber: num,
+    priceGhs,
+    kind: k,
+    description: normalizedDescription,
+  });
+  if (imageUrls && imageUrls.length > 0) {
+    try {
+      const uploadedUrls = await processRoomImages(
+        created._id.toString(),
+        imageUrls,
+      );
+      await Room.updateOne(
+        { _id: created._id },
+        { $set: { imageUrls: uploadedUrls } },
+      );
+    } catch {
+      // Non-fatal: room is created, images just didn't upload
+    }
+  }
   await audit(
     auth,
     "room_added",
@@ -565,7 +939,13 @@ export async function addRoom(
 export async function updateRoom(
   auth: SessionPayload,
   roomId: string,
-  patch: { roomNumber?: string; priceGhs?: number; kind?: RoomKind },
+  patch: {
+    roomNumber?: string;
+    priceGhs?: number;
+    kind?: RoomKind;
+    description?: string;
+    imageUrls?: string[];
+  },
 ) {
   if (auth.role !== "admin") throw new ApiError(403, "Forbidden");
   await connectDb();
@@ -582,6 +962,15 @@ export async function updateRoom(
     if (clash) throw new ApiError(409, "Room number already in use.");
   }
 
+  let uploadedImageUrls: string[] | undefined;
+  if (patch.imageUrls !== undefined) {
+    try {
+      uploadedImageUrls = await processRoomImages(roomId, patch.imageUrls);
+    } catch {
+      // Non-fatal
+    }
+  }
+
   await Room.updateOne(
     { _id: oid },
     {
@@ -594,6 +983,12 @@ export async function updateRoom(
         }),
         ...(patch.kind !== undefined && {
           kind: normalizeRoomKind(patch.kind),
+        }),
+        ...(patch.description !== undefined && {
+          description: normalizeRoomDescription(patch.description),
+        }),
+        ...(uploadedImageUrls !== undefined && {
+          imageUrls: uploadedImageUrls,
         }),
       },
     },

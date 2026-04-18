@@ -30,6 +30,8 @@ export async function POST(req: Request) {
       parsed.data.roomNumber,
       parsed.data.priceGhs,
       parsed.data.kind,
+      parsed.data.description,
+      parsed.data.imageUrls,
     )
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch (e) {

@@ -55,6 +55,21 @@ type HotelContextValue = {
     checkInDate: string,
     checkOutDate: string,
     guest: GuestDetailsGhana,
+  ) => Promise<
+    | {
+        ok: true;
+        bookingId: string;
+        status: "pending_payment";
+        paystackAuthorizationUrl?: string;
+      }
+    | { error: string }
+  >;
+  confirmPaymentAction: (
+    bookingId: string,
+    cashAmountGhs: number,
+  ) => Promise<{ ok: true } | { error: string }>;
+  resendCashEmailAction: (
+    bookingId: string,
   ) => Promise<{ ok: true } | { error: string }>;
   cancelBookingAction: (
     bookingId: string,
@@ -69,10 +84,12 @@ type HotelContextValue = {
     roomNumber: string,
     priceGhs: number,
     kind?: RoomKind,
+    description?: string,
+    imageUrls?: string[],
   ) => Promise<{ ok: true } | { error: string }>;
   updateRoomAction: (
     roomId: string,
-    patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind">>,
+    patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind" | "description" | "imageUrls">>,
   ) => Promise<{ ok: true } | { error: string }>;
   deleteRoomAction: (
     roomId: string,
@@ -170,6 +187,8 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       rooms: rawRooms.map((r) => ({
         ...r,
         kind: r.kind === "conference" ? "conference" : "guest",
+        description: r.description?.trim() || undefined,
+        imageUrls: Array.isArray(r.imageUrls) ? r.imageUrls : undefined,
       })),
       bookings: data.bookings ?? [],
       auditLog: data.auditLog ?? [],
@@ -206,6 +225,14 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       /* keep prior state */
     }
   }, [loadFromApi]);
+
+  // Auto-refresh every 30 seconds so admin/receptionist see new payments without manual reload
+  useEffect(() => {
+    const id = setInterval(() => {
+      refresh();
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [refresh]);
 
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
@@ -295,6 +322,50 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
         };
       }
       await refresh();
+      const bookingId = (data as { bookingId?: string }).bookingId;
+      if (!bookingId) {
+        return { error: "Booking created but no booking ID returned." };
+      }
+      return {
+        ok: true as const,
+        bookingId,
+        status: "pending_payment" as const,
+        paystackAuthorizationUrl: (data as { paystackAuthorizationUrl?: string })
+          .paystackAuthorizationUrl,
+      };
+    },
+    [refresh],
+  );
+
+  const confirmPaymentAction = useCallback(
+    async (bookingId: string, cashAmountGhs: number) => {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "confirm_payment", cashAmountGhs }),
+      });
+      const data = await parseJsonSafe(res);
+      if (!res.ok)
+        return { error: (data as { error?: string }).error || "Failed." };
+      await refresh();
+      return { ok: true as const };
+    },
+    [refresh],
+  );
+
+  const resendCashEmailAction = useCallback(
+    async (bookingId: string) => {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resend_cash_email" }),
+      });
+      const data = await parseJsonSafe(res);
+      if (!res.ok)
+        return { error: (data as { error?: string }).error || "Failed." };
+      await refresh();
       return { ok: true as const };
     },
     [refresh],
@@ -352,7 +423,13 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addRoomAction = useCallback(
-    async (roomNumber: string, priceGhs: number, kind?: RoomKind) => {
+    async (
+      roomNumber: string,
+      priceGhs: number,
+      kind?: RoomKind,
+      description?: string,
+      imageUrls?: string[],
+    ) => {
       const res = await fetch("/api/rooms", {
         method: "POST",
         credentials: "include",
@@ -361,6 +438,8 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
           roomNumber,
           priceGhs,
           ...(kind ? { kind } : {}),
+          ...(description !== undefined ? { description } : {}),
+          ...(imageUrls && imageUrls.length > 0 ? { imageUrls } : {}),
         }),
       });
       const data = await parseJsonSafe(res);
@@ -375,7 +454,7 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
   const updateRoomAction = useCallback(
     async (
       roomId: string,
-      patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind">>,
+      patch: Partial<Pick<Room, "roomNumber" | "priceGhs" | "kind" | "description" | "imageUrls">>,
     ) => {
       const res = await fetch(`/api/rooms/${roomId}`, {
         method: "PATCH",
@@ -556,6 +635,8 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       register,
       refresh,
       createBooking,
+      confirmPaymentAction,
+      resendCashEmailAction,
       cancelBookingAction,
       checkInAction,
       checkOutAction,
@@ -580,6 +661,8 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       register,
       refresh,
       createBooking,
+      confirmPaymentAction,
+      resendCashEmailAction,
       cancelBookingAction,
       checkInAction,
       checkOutAction,

@@ -25,6 +25,7 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
+  WalletCards,
 } from "lucide-react";
 import { useHotel } from "@/components/hotel/HotelProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -82,6 +84,7 @@ const CATEGORY_COLORS: Record<StoreCategory, string> = {
 };
 
 const STATUS_STYLES = {
+  pending_payment: "bg-sky-100 text-sky-700 border-sky-200",
   available: "bg-emerald-100 text-emerald-700 border-emerald-200",
   booked: "bg-amber-100 text-amber-700 border-amber-200",
   occupied: "bg-red-100 text-red-700 border-red-200",
@@ -90,6 +93,20 @@ const STATUS_STYLES = {
   checked_out: "bg-slate-100 text-slate-600 border-slate-200",
   cancelled: "bg-red-100 text-red-500 border-red-200",
 };
+
+function rateUnit(kind: RoomKind) {
+  return kind === "conference" ? "day" : "night";
+}
+
+function paymentMethodLabel(method: string) {
+  const map: Record<string, string> = {
+    momo: "MTN Mobile Money",
+    telecel_cash: "Telecel Cash",
+    card: "Card",
+    cash: "Cash",
+  };
+  return map[method] ?? method;
+}
 
 export function AdminDashboard() {
   const router = useRouter();
@@ -110,15 +127,19 @@ export function AdminDashboard() {
     deleteStoreItemAction,
     restockStoreItemAction,
     fulfillSupplyRequestAction,
+    confirmPaymentAction,
+    resendCashEmailAction,
   } = useHotel();
 
   const [roomNum, setRoomNum] = useState("");
   const [roomPrice, setRoomPrice] = useState("");
   const [newRoomKind, setNewRoomKind] = useState<RoomKind>("guest");
+  const [roomDesc, setRoomDesc] = useState("");
   const [editRoomId, setEditRoomId] = useState<string | null>(null);
   const [editNum, setEditNum] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editKind, setEditKind] = useState<RoomKind>("guest");
+  const [editDesc, setEditDesc] = useState("");
 
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -135,6 +156,9 @@ export function AdminDashboard() {
   const [restockDelta, setRestockDelta] = useState("");
   const [fulfillLoading, setFulfillLoading] = useState<string | null>(null);
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
+  const [cashReceivedByBooking, setCashReceivedByBooking] = useState<Record<string, string>>({});
+  const [confirmingCashBookingId, setConfirmingCashBookingId] = useState<string | null>(null);
+  const [resendingCashEmailBookingId, setResendingCashEmailBookingId] = useState<string | null>(null);
 
   const today = todayISO();
 
@@ -157,6 +181,40 @@ export function AdminDashboard() {
       ).length,
     };
   }, [state.rooms, state.bookings, today]);
+
+  const paidBookings = useMemo(() => {
+    return state.bookings
+      .filter((b) => b.guestDetails.paymentStatus === "paid")
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((b) => {
+        const room = state.rooms.find((r) => r.id === b.roomId);
+        const start = new Date(`${b.checkInDate}T00:00:00Z`).getTime();
+        const end = new Date(`${b.checkOutDate}T00:00:00Z`).getTime();
+        const nights = Math.max(
+          1,
+          Math.round((end - start) / (1000 * 60 * 60 * 24)),
+        );
+        const note = b.guestDetails.paymentNote ?? "";
+        const paystackRef = note.match(/paystack_ref:([^|\s]+)/)?.[1];
+        const cashRef = note.match(/cash_ref:([^|\s]+)/)?.[1];
+        const cashReceived = note.match(/cash_received_ghs:([0-9]+(?:\.[0-9]+)?)/)?.[1];
+        const amountGhs =
+          cashReceived !== undefined
+            ? Number(cashReceived)
+            : (room?.priceGhs ?? 0) * nights;
+        const reference = paystackRef ?? cashRef ?? "—";
+        const paidAtIso = note.match(/paid_at:([^|\s]+)/)?.[1] ?? null;
+        return {
+          booking: b,
+          room,
+          nights,
+          amountGhs,
+          reference,
+          paidAtIso,
+        };
+      });
+  }, [state.bookings, state.rooms]);
 
   if (!ready) {
     return (
@@ -207,7 +265,12 @@ export function AdminDashboard() {
       });
       return;
     }
-    const r = await addRoomAction(roomNum, price, newRoomKind);
+    const r = await addRoomAction(
+      roomNum,
+      price,
+      newRoomKind,
+      roomDesc,
+    );
     if ("error" in r) {
       toast({
         title: "Could not add room",
@@ -218,6 +281,7 @@ export function AdminDashboard() {
     }
     setRoomNum("");
     setRoomPrice("");
+    setRoomDesc("");
     toast({
       title: "✅ Room added",
       description: `Room ${roomNum} at ${formatGhs(price)}`,
@@ -231,6 +295,7 @@ export function AdminDashboard() {
     setEditNum(r.roomNumber);
     setEditPrice(String(r.priceGhs));
     setEditKind(r.kind === "conference" ? "conference" : "guest");
+    setEditDesc(r.description ?? "");
   };
 
   const saveEdit = async () => {
@@ -248,6 +313,7 @@ export function AdminDashboard() {
       roomNumber: editNum,
       priceGhs: price,
       kind: editKind,
+      description: editDesc,
     });
     if ("error" in r) {
       toast({
@@ -409,8 +475,8 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+                  <div>
               <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs text-slate-300">{session.email}</span>
             </div>
@@ -518,6 +584,12 @@ export function AdminDashboard() {
                     value: "bookings",
                     icon: <ClipboardList className="h-4 w-4" />,
                     label: "Bookings",
+                  },
+                  {
+                    value: "payments",
+                    icon: <WalletCards className="h-4 w-4" />,
+                    label: "Payments",
+                    badge: paidBookings.length,
                   },
                   {
                     value: "store",
@@ -644,53 +716,68 @@ export function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-3 items-end">
-                  <div className="flex-1 min-w-[120px]">
+                <div className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px] md:items-end">
+                    <div>
+                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                        Room number
+                      </Label>
+                      <Input
+                        placeholder="e.g. 201"
+                        value={roomNum}
+                        onChange={(e) => setRoomNum(e.target.value)}
+                        className="border-slate-200 focus:border-amber-400 focus:ring-amber-400/20"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                        Price / {rateUnit(newRoomKind)} (GHS)
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder="e.g. 450"
+                        value={roomPrice}
+                        onChange={(e) => setRoomPrice(e.target.value)}
+                        className="border-slate-200 focus:border-amber-400 focus:ring-amber-400/20"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                        Type
+                      </Label>
+                      <Select
+                        value={newRoomKind}
+                        onValueChange={(v) => setNewRoomKind(v as RoomKind)}
+                      >
+                        <SelectTrigger className="border-slate-200">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="guest">Guest room</SelectItem>
+                          <SelectItem value="conference">Conference</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
                     <Label className="text-xs font-medium text-slate-600 mb-1 block">
-                      Room number
+                      Brief description
                     </Label>
-                    <Input
-                      placeholder="e.g. 201"
-                      value={roomNum}
-                      onChange={(e) => setRoomNum(e.target.value)}
-                      className="border-slate-200 focus:border-amber-400 focus:ring-amber-400/20"
+                    <Textarea
+                      placeholder="Short overview for guests, e.g. quiet deluxe room with workspace or conference room with projector and boardroom seating."
+                      value={roomDesc}
+                      onChange={(e) => setRoomDesc(e.target.value)}
+                      className="min-h-24 border-slate-200 focus:border-amber-400 focus:ring-amber-400/20"
                     />
                   </div>
-                  <div className="flex-1 min-w-[120px]">
-                    <Label className="text-xs font-medium text-slate-600 mb-1 block">
-                      Price / night (GHS)
-                    </Label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 450"
-                      value={roomPrice}
-                      onChange={(e) => setRoomPrice(e.target.value)}
-                      className="border-slate-200 focus:border-amber-400 focus:ring-amber-400/20"
-                    />
-                  </div>
-                  <div className="w-full sm:w-44">
-                    <Label className="text-xs font-medium text-slate-600 mb-1 block">
-                      Type
-                    </Label>
-                    <Select
-                      value={newRoomKind}
-                      onValueChange={(v) => setNewRoomKind(v as RoomKind)}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleAddRoom}
+                      className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white"
                     >
-                      <SelectTrigger className="border-slate-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="guest">Guest room</SelectItem>
-                        <SelectItem value="conference">Conference</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <Plus className="h-4 w-4 mr-1.5" /> Add room
+                    </Button>
                   </div>
-                  <Button
-                    onClick={handleAddRoom}
-                    className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-1.5" /> Add room
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -714,12 +801,17 @@ export function AdminDashboard() {
                     text: "text-red-700",
                   },
                 }[r.status];
+                const roomDescription =
+                  r.description?.trim() ||
+                  "No description yet. Click Edit room to add one.";
+
                 return (
                   <div
                     key={r.id}
-                    className={`border rounded-xl p-4 ${statusStyle.bg} transition-all hover:shadow-md`}
+                    className={`border rounded-xl overflow-hidden ${statusStyle.bg} transition-all hover:shadow-md`}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
                           Room
@@ -748,8 +840,11 @@ export function AdminDashboard() {
                     <p className="text-sm font-semibold text-slate-700 mt-3">
                       {formatGhs(r.priceGhs)}{" "}
                       <span className="text-xs font-normal text-slate-400">
-                        / night
+                        / {rateUnit(r.kind)}
                       </span>
+                    </p>
+                    <p className="mt-2 text-sm font-medium leading-relaxed text-slate-700">
+                      {roomDescription}
                     </p>
                     <div className="flex gap-2 mt-3">
                       <Button
@@ -758,7 +853,7 @@ export function AdminDashboard() {
                         onClick={() => openEdit(r.id)}
                         className="flex-1 h-8 text-xs border-slate-300 hover:bg-white"
                       >
-                        <Pencil className="h-3 w-3 mr-1" /> Edit
+                        <Pencil className="h-3 w-3 mr-1" /> Edit room
                       </Button>
                       <Button
                         variant="ghost"
@@ -769,6 +864,7 @@ export function AdminDashboard() {
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
+                    </div>{/* end p-4 */}
                   </div>
                 );
               })}
@@ -803,13 +899,23 @@ export function AdminDashboard() {
                   </div>
                   <div>
                     <Label className="text-xs font-medium text-slate-600">
-                      Price per night (GHS)
+                      Price per {rateUnit(editKind)} (GHS)
                     </Label>
                     <Input
                       type="number"
                       value={editPrice}
                       onChange={(e) => setEditPrice(e.target.value)}
                       className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-slate-600">
+                      Brief description (shown on client cards)
+                    </Label>
+                    <Textarea
+                      value={editDesc}
+                      onChange={(e) => setEditDesc(e.target.value)}
+                      className="mt-1 min-h-24"
                     />
                   </div>
                   <div>
@@ -870,6 +976,9 @@ export function AdminDashboard() {
                           <TableRow className="bg-slate-50 hover:bg-slate-50">
                             <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                               Guest
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Contact
                             </TableHead>
                             <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                               Room
@@ -950,6 +1059,17 @@ export function AdminDashboard() {
                                     </Button>
                                   </TableCell>
                                   <TableCell className="text-right space-x-2">
+                                    {b.status === "pending_payment" &&
+                                      b.guestDetails.paymentMethod === "cash" && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-7 text-xs"
+                                          onClick={() => setExpandedBookingId(b.id)}
+                                        >
+                                          Cash details
+                                        </Button>
+                                      )}
                                     {b.status === "booked" && (
                                       <Button
                                         size="sm"
@@ -1085,6 +1205,131 @@ export function AdminDashboard() {
                                             </p>
                                           )}
                                         </div>
+
+                                        {b.status === "pending_payment" &&
+                                        b.guestDetails.paymentMethod === "cash" ? (
+                                          <div className="mt-4 border-t border-slate-200 pt-4">
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                                              Confirm cash payment
+                                            </p>
+                                            <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                                              <div className="w-full sm:max-w-[220px]">
+                                                <Label className="text-xs font-medium text-slate-600">
+                                                  Amount received (GHS)
+                                                </Label>
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.01"
+                                                  value={cashReceivedByBooking[b.id] ?? ""}
+                                                  onChange={(e) =>
+                                                    setCashReceivedByBooking((prev) => ({
+                                                      ...prev,
+                                                      [b.id]: e.target.value,
+                                                    }))
+                                                  }
+                                                  placeholder="e.g. 230"
+                                                />
+                                              </div>
+                                              <Button
+                                                className="bg-sky-600 hover:bg-sky-700 text-white"
+                                                disabled={confirmingCashBookingId === b.id}
+                                                onClick={async () => {
+                                                  const amount = Number(
+                                                    cashReceivedByBooking[b.id] ?? "",
+                                                  );
+                                                  if (!Number.isFinite(amount) || amount <= 0) {
+                                                    toast({
+                                                      title: "Enter valid amount",
+                                                      description:
+                                                        "Input the cash amount received before generating cash ref.",
+                                                      variant: "destructive",
+                                                    });
+                                                    return;
+                                                  }
+                                                  setConfirmingCashBookingId(b.id);
+                                                  const r = await confirmPaymentAction(b.id, amount);
+                                                  setConfirmingCashBookingId(null);
+                                                  if ("error" in r) {
+                                                    toast({
+                                                      title: "Cash confirmation failed",
+                                                      description: r.error,
+                                                      variant: "destructive",
+                                                    });
+                                                    return;
+                                                  }
+                                                  setCashReceivedByBooking((prev) => ({
+                                                    ...prev,
+                                                    [b.id]: "",
+                                                  }));
+                                                  toast({
+                                                    title: "✅ Cash payment confirmed",
+                                                    description:
+                                                      "Cash ref generated, emails sent, and booking updated to booked.",
+                                                  });
+                                                }}
+                                              >
+                                                {confirmingCashBookingId === b.id
+                                                  ? "Generating..."
+                                                  : "Generate cash ref & confirm"}
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ) : null}
+
+                                        {b.guestDetails.paymentMethod === "cash" &&
+                                        b.guestDetails.paymentStatus === "paid" ? (
+                                          <div className="mt-4 border-t border-slate-200 pt-4">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                                Cash email status
+                                              </p>
+                                              <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                                                  (b.guestDetails.paymentNote ?? "").includes("cash_email_status:sent")
+                                                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                                    : (b.guestDetails.paymentNote ?? "").includes("cash_email_status:failed")
+                                                      ? "bg-red-100 text-red-700 border-red-200"
+                                                      : "bg-amber-100 text-amber-700 border-amber-200"
+                                                }`}
+                                              >
+                                                {(b.guestDetails.paymentNote ?? "").includes("cash_email_status:sent")
+                                                  ? "sent"
+                                                  : (b.guestDetails.paymentNote ?? "").includes("cash_email_status:failed")
+                                                    ? "failed"
+                                                    : "pending"}
+                                              </span>
+                                            </div>
+                                            <div className="mt-2">
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={resendingCashEmailBookingId === b.id}
+                                                onClick={async () => {
+                                                  setResendingCashEmailBookingId(b.id);
+                                                  const r = await resendCashEmailAction(b.id);
+                                                  setResendingCashEmailBookingId(null);
+                                                  if ("error" in r) {
+                                                    toast({
+                                                      title: "Resend failed",
+                                                      description: r.error,
+                                                      variant: "destructive",
+                                                    });
+                                                    return;
+                                                  }
+                                                  toast({
+                                                    title: "✅ Cash emails resent",
+                                                    description: "Guest and admin confirmation emails were resent.",
+                                                  });
+                                                }}
+                                              >
+                                                {resendingCashEmailBookingId === b.id
+                                                  ? "Resending..."
+                                                  : "Resend cash emails"}
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ) : null}
                                       </div>
                                     </TableCell>
                                   </TableRow>
@@ -1092,6 +1337,111 @@ export function AdminDashboard() {
                                 </Fragment>
                               );
                             })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── Payments ── */}
+          <TabsContent value="payments">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold text-slate-800">
+                  Received payments
+                </CardTitle>
+                <CardDescription>
+                  All successful payments from online and cash confirmations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {paidBookings.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 text-slate-400">
+                    <WalletCards className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm">No received payments yet.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-1 px-1">
+                    <div className="rounded-xl overflow-hidden border border-slate-100">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50 hover:bg-slate-50">
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Paid at
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Booking ID
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Guest
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Contact
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Room
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Method
+                            </TableHead>
+                            <TableHead className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Amount
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Reference
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paidBookings.map((p, idx) => (
+                            <TableRow
+                              key={p.booking.id}
+                              className={
+                                idx % 2 === 0
+                                  ? "bg-white hover:bg-slate-50/80"
+                                  : "bg-slate-50/50 hover:bg-slate-50"
+                              }
+                            >
+                              <TableCell className="text-xs text-slate-600 whitespace-nowrap">
+                                {p.paidAtIso
+                                  ? format(parseISO(p.paidAtIso), "MMM d, yyyy HH:mm")
+                                  : format(parseISO(p.booking.createdAt), "MMM d, yyyy HH:mm")}
+                              </TableCell>
+                              <TableCell className="text-xs font-mono text-slate-700">
+                                {p.booking.id}
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium text-slate-800 text-sm">
+                                    {p.booking.guestDetails.fullName}
+                                  </p>
+                                  <p className="text-xs text-slate-400">
+                                    {p.booking.guestDetails.email}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-slate-700">
+                                {p.booking.guestDetails.phone}
+                              </TableCell>
+                              <TableCell>
+                                <span className="inline-flex items-center justify-center bg-slate-900 text-white text-xs font-bold rounded-lg px-2.5 py-1">
+                                  {p.room?.roomNumber ?? "—"}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-sm text-slate-700">
+                                {paymentMethodLabel(p.booking.guestDetails.paymentMethod)}
+                              </TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-emerald-700">
+                                {formatGhs(p.amountGhs)}
+                              </TableCell>
+                              <TableCell className="text-xs text-slate-600 font-mono">
+                                {p.reference}
+                              </TableCell>
+                            </TableRow>
+                          ))}
                         </TableBody>
                       </Table>
                     </div>

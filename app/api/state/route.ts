@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/server/api-error"
 export const dynamic = "force-dynamic"
 
 const anonymousState = {
-  session: null as const,
+  session: null,
   profile: undefined,
   users: [],
   rooms: [],

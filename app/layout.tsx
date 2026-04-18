@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppProviders } from "./providers";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PolicyNotice } from "@/components/policy-notice";
 
 const SITE_URL = "https://waterhouselodge.com";
 
@@ -70,6 +71,11 @@ export default function RootLayout({
             <ThemeToggle />
           </div>
           {children}
+          <div className="border-t border-amber-200 bg-amber-50/70">
+            <div className="mx-auto max-w-6xl px-4 py-3">
+              <PolicyNotice className="border-none bg-transparent px-0 py-0 text-xs text-amber-900" />
+            </div>
+          </div>
         </AppProviders>
       </body>
     </html>
