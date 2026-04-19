@@ -27,6 +27,7 @@ import {
   Twitter,
   Send,
   MessageCircle,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,7 +51,7 @@ type LightboxImage = {
   title?: string;
 };
 
-// Lightbox component
+// Lightbox component — unchanged logic, refined visuals
 function ImageLightbox({
   images,
   initialIndex,
@@ -70,17 +71,8 @@ function ImageLightbox({
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < images.length - 1;
 
-  const goToPrevious = () => {
-    if (hasPrevious) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const goToNext = () => {
-    if (hasNext) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
+  const goToPrevious = () => { if (hasPrevious) setCurrentIndex(currentIndex - 1); };
+  const goToNext = () => { if (hasNext) setCurrentIndex(currentIndex + 1); };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") onClose();
@@ -90,72 +82,59 @@ function ImageLightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/97 backdrop-blur-xl"
       onClick={onClose}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="dialog"
       aria-label="Image gallery"
     >
-      {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 z-10 rounded-full bg-stone-800/50 p-2 text-white hover:bg-stone-700/50 transition-colors"
+        className="absolute right-6 top-6 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition-all hover:bg-white/15"
         aria-label="Close gallery"
       >
-        <X className="h-6 w-6" />
+        <X className="h-5 w-5" />
       </button>
 
-      {/* Image counter */}
-      <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-stone-800/50 px-3 py-1 text-sm text-white">
+      <div className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs tracking-widest text-white/60 uppercase">
         {currentIndex + 1} / {images.length}
       </div>
 
-      {/* Previous button */}
       {hasPrevious && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            goToPrevious();
-          }}
-          className="absolute left-4 z-10 rounded-full bg-stone-800/50 p-2 text-white hover:bg-stone-700/50 transition-colors"
+          onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
+          className="absolute left-6 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition-all hover:bg-white/15"
           aria-label="Previous image"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
       )}
 
-      {/* Next button */}
       {hasNext && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            goToNext();
-          }}
-          className="absolute right-4 z-10 rounded-full bg-stone-800/50 p-2 text-white hover:bg-stone-700/50 transition-colors"
+          onClick={(e) => { e.stopPropagation(); goToNext(); }}
+          className="absolute right-6 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition-all hover:bg-white/15"
           aria-label="Next image"
         >
-          <ChevronRightIcon className="h-6 w-6" />
+          <ChevronRightIcon className="h-5 w-5" />
         </button>
       )}
 
-      {/* Main image */}
       <div
-        className="relative max-h-[90vh] max-w-[90vw] cursor-pointer"
+        className="relative max-h-[90vh] max-w-[90vw] cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative h-auto w-auto">
-          <Image
-            src={currentImage.src}
-            alt={currentImage.alt || "Gallery image"}
-            width={1200}
-            height={800}
-            className="max-h-[85vh] w-auto object-contain"
-            priority
-          />
-        </div>
+        <Image
+          src={currentImage.src}
+          alt={currentImage.alt || "Gallery image"}
+          width={1200}
+          height={800}
+          className="max-h-[85vh] w-auto rounded-xl object-contain shadow-2xl"
+          priority
+        />
         {currentImage.caption && (
-          <p className="mt-4 text-center text-sm text-stone-400">
+          <p className="mt-4 text-center text-xs tracking-wide text-white/40 uppercase">
             {currentImage.caption}
           </p>
         )}
@@ -172,12 +151,9 @@ export default function HomePage() {
   const LODGE_MAP_NAME = "Waterhouse Lodge";
   const LODGE_MAP_STREET =
     "Nii Opkoti Adjei Commey, Adenta, Accra, Ghana (Between Roman Catholic Housing Commandos and Victory Presby Church Adenta)";
-  const LODGE_MAP_QUERY = encodeURIComponent(
-    `${LODGE_MAP_NAME}, ${LODGE_MAP_STREET}`,
-  );
+  const LODGE_MAP_QUERY = encodeURIComponent(`${LODGE_MAP_NAME}, ${LODGE_MAP_STREET}`);
   const LODGE_LAT = "5.713546";
   const LODGE_LNG = "-0.154072";
-  /** Name + address so Google can match a Place; ll pins the exact coordinates. */
   const mapsEmbedSrc = `https://www.google.com/maps?q=${LODGE_MAP_QUERY}&ll=${LODGE_LAT},${LODGE_LNG}&z=17&hl=en&output=embed`;
   const mapsPlaceUrl = `https://www.google.com/maps/search/?api=1&query=${LODGE_MAP_QUERY}`;
   const mapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${LODGE_MAP_QUERY}`;
@@ -198,11 +174,7 @@ export default function HomePage() {
       addressRegion: "Greater Accra Region",
       addressCountry: "GH",
     },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: 5.713546,
-      longitude: -0.154072,
-    },
+    geo: { "@type": "GeoCoordinates", latitude: 5.713546, longitude: -0.154072 },
     areaServed: ["Adenta", "Accra", "Ghana"],
     priceRange: "GHS",
     sameAs: [
@@ -219,108 +191,155 @@ export default function HomePage() {
     setLightboxOpen(true);
   };
 
-  // Social media links configuration
   const socialLinks = [
-    {
-      name: "Facebook",
-      icon: Facebook,
-      href: "https://facebook.com/waterhouselodge",
-      color: "hover:bg-[#1877F2]",
-      bgColor: "bg-[#1877F2]/10",
-    },
-    {
-      name: "Instagram",
-      icon: Instagram,
-      href: "https://instagram.com/waterhouselodge",
-      color: "hover:bg-[#E4405F]",
-      bgColor: "bg-[#E4405F]/10",
-    },
-    {
-      name: "TikTok",
-      icon: Send,
-      href: "https://tiktok.com/@waterhouselodge",
-      color: "hover:bg-[#000000]",
-      bgColor: "bg-[#69C9D0]/10",
-    },
-    {
-      name: "WhatsApp",
-      icon: MessageCircle,
-      href: "https://wa.me/233535536119", // Replace with your WhatsApp number
-      color: "hover:bg-[#25D366]",
-      bgColor: "bg-[#25D366]/10",
-    },
+    { name: "Facebook", icon: Facebook, href: "https://facebook.com/waterhouselodge", color: "hover:bg-[#1877F2] hover:border-[#1877F2]", bgColor: "bg-stone-100 dark:bg-stone-800" },
+    { name: "Instagram", icon: Instagram, href: "https://instagram.com/waterhouselodge", color: "hover:bg-[#E4405F] hover:border-[#E4405F]", bgColor: "bg-stone-100 dark:bg-stone-800" },
+    { name: "TikTok", icon: Send, href: "https://tiktok.com/@waterhouselodge", color: "hover:bg-[#111] hover:border-[#111]", bgColor: "bg-stone-100 dark:bg-stone-800" },
+    { name: "WhatsApp", icon: MessageCircle, href: "https://wa.me/233535536119", color: "hover:bg-[#25D366] hover:border-[#25D366]", bgColor: "bg-stone-100 dark:bg-stone-800" },
   ];
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
+    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 dark:bg-[#0E0C0A] dark:text-stone-100" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+        .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+        .font-body { font-family: 'DM Sans', system-ui, sans-serif; }
+
+        .grain-overlay::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .hero-gradient {
+          background: radial-gradient(ellipse 80% 60% at 60% -10%, rgba(212, 167, 92, 0.12), transparent 60%),
+                      radial-gradient(ellipse 50% 40% at 0% 100%, rgba(212, 167, 92, 0.06), transparent);
+        }
+
+        .dark .hero-gradient {
+          background: radial-gradient(ellipse 80% 60% at 60% -10%, rgba(212, 167, 92, 0.08), transparent 60%),
+                      radial-gradient(ellipse 50% 40% at 0% 100%, rgba(212, 167, 92, 0.04), transparent);
+        }
+
+        .section-divider {
+          background: linear-gradient(90deg, transparent, rgba(212, 167, 92, 0.3), transparent);
+          height: 1px;
+          width: 100%;
+        }
+
+        .gold-line {
+          background: linear-gradient(90deg, #D4A75C, #E8C07E, #D4A75C);
+        }
+
+        .img-hover { transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .img-hover:hover { transform: scale(1.04); }
+
+        .card-shine {
+          position: relative;
+          overflow: hidden;
+        }
+        .card-shine::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
+          transform: translateX(-100%);
+          transition: transform 0.6s ease;
+          z-index: 1;
+        }
+        .card-shine:hover::before { transform: translateX(100%); }
+
+        .number-badge {
+          background: linear-gradient(135deg, #D4A75C, #C4904A);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+      `}</style>
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
+
       <AvailableRoomsFloat />
-      <header className="sticky top-0 z-50 border-b border-stone-200 bg-stone-50/90 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-950/90">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-semibold tracking-tight text-stone-900 dark:text-white"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
-              <BedDouble className="h-5 w-5" aria-hidden />
+
+      {/* ── HEADER ── */}
+      <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-[#FAF8F5]/95 backdrop-blur-xl dark:border-stone-800/40 dark:bg-[#0E0C0A]/95">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+          <Link href="/" className="flex items-center gap-3 font-body">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-300/30 bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-amber-500">
+              <BedDouble className="h-4.5 w-4.5" aria-hidden />
             </span>
-            <span className="text-sm sm:text-base">Waterhouse Lodge</span>
+            <div className="flex flex-col leading-none">
+              <span className="font-display text-base font-medium tracking-wide text-stone-900 dark:text-white">Waterhouse Lodge</span>
+              <span className="font-body text-[10px] tracking-[0.15em] text-stone-400 uppercase">Accra, Ghana</span>
+            </div>
           </Link>
-          <nav className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <nav className="flex shrink-0 items-center gap-2">
             <Button
               asChild
               variant="ghost"
               size="sm"
-              className="hidden text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-white sm:inline-flex"
+              className="font-body hidden text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white sm:inline-flex"
             >
               <Link href="/login">Sign in</Link>
             </Button>
             <Button
               asChild
               size="sm"
-              className="bg-amber-500 font-semibold text-stone-950 shadow-sm hover:bg-amber-400"
+              className="font-body bg-stone-900 font-medium text-white shadow-sm hover:bg-stone-700 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
             >
-              <Link href="/register">Book your stay</Link>
+              <Link href="/register" className="flex items-center gap-1.5">
+                Book stay
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
             </Button>
           </nav>
         </div>
       </header>
 
       <main>
-        {/* Hero — room photo + headline */}
-        <section className="relative overflow-hidden border-b border-stone-200 dark:border-stone-800">
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_70%_-10%,rgba(245,158,11,0.18),transparent)]"
-            aria-hidden
-          />
-          <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 lg:py-20">
-            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+        {/* ── HERO ── */}
+        <section className="hero-gradient relative overflow-hidden">
+          {/* Decorative grid */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.025] dark:opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} aria-hidden />
+
+          <div className="mx-auto max-w-6xl px-6 py-16 sm:py-24 lg:py-28">
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+              {/* Copy */}
               <div className="order-2 lg:order-1">
-                <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 sm:text-sm">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  Adenta, Accra, Ghana · Rates in GHS
-                </p>
-                <h1 className="max-w-xl text-balance font-serif text-4xl font-medium leading-tight tracking-tight text-stone-900 dark:text-white sm:text-5xl lg:text-6xl">
-                  Rest easy — your room is waiting
+                <div className="mb-6 inline-flex items-center gap-2 font-body">
+                  <span className="gold-line block h-px w-8" />
+                  <span className="text-xs font-medium tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Adenta · Accra · Ghana</span>
+                </div>
+
+                <h1 className="font-display max-w-xl text-balance text-5xl font-light leading-[1.1] tracking-tight text-stone-900 dark:text-white sm:text-6xl lg:text-7xl">
+                  Rest easy —<br />
+                  <em className="italic text-amber-600 dark:text-amber-400">your room</em><br />
+                  is waiting
                 </h1>
-                <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-stone-600 dark:text-stone-400 sm:text-lg">
-                  Relax in single rooms with fresh bed linen and space to truly unwind.
-                  Check availability, view nightly rates in Ghana Cedis, and book your stay in minutes
+
+                <p className="font-body mt-7 max-w-lg text-pretty text-base leading-relaxed text-stone-500 dark:text-stone-400">
+                  Single rooms with crisp bed linen, genuine calm, and rates displayed in Ghana Cedis.
+                  Check availability and secure your stay in minutes.
                 </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button
                     asChild
                     size="lg"
-                    className="h-12 rounded-lg bg-amber-500 px-8 text-base font-semibold text-stone-950 shadow-lg shadow-amber-950/25 hover:bg-amber-400"
+                    className="font-body h-12 rounded-xl bg-stone-900 px-8 text-sm font-medium tracking-wide text-white shadow-lg hover:bg-stone-700 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
                   >
-                    <Link
-                      href="/register"
-                      className="inline-flex items-center gap-2"
-                    >
-                      Book a reservation
+                    <Link href="/register" className="inline-flex items-center gap-2">
+                      Reserve a room
                       <ChevronRight className="h-4 w-4" aria-hidden />
                     </Link>
                   </Button>
@@ -328,51 +347,49 @@ export default function HomePage() {
                     asChild
                     size="lg"
                     variant="outline"
-                    className="h-12 rounded-lg border-stone-300 bg-white text-stone-800 hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900/40 dark:text-stone-100 dark:hover:bg-stone-800"
+                    className="font-body h-12 rounded-xl border-stone-300 bg-transparent text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800/50"
                   >
                     <Link href="/login">I have an account</Link>
                   </Button>
                 </div>
-                <p className="mt-6 text-sm text-stone-600 dark:text-stone-500">
-                  Walk-ins welcome at reception.
-                </p>
+
+                <p className="font-body mt-5 text-xs text-stone-400">Walk-ins welcome at reception.</p>
+
+                {/* Trust signals */}
+                <div className="mt-8 flex flex-wrap gap-5">
+                  {[
+                    { label: "GHS pricing", desc: "Local currency" },
+                    { label: "Clean rooms", desc: "Verified daily" },
+                    { label: "Walk-in OK", desc: "No hidden fees" },
+                  ].map((t) => (
+                    <div key={t.label} className="flex items-center gap-2">
+                      <span className="h-1 w-1 rounded-full bg-amber-500" />
+                      <div className="font-body">
+                        <span className="text-xs font-medium text-stone-900 dark:text-stone-100">{t.label}</span>
+                        <span className="ml-1 text-xs text-stone-400">{t.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
+              {/* Image */}
               <div className="order-1 lg:order-2">
                 <div className="relative mx-auto max-w-xl lg:max-w-none">
+                  {/* Corner accent */}
+                  <div className="absolute -right-3 -top-3 h-20 w-20 rounded-2xl border border-amber-400/20 hidden lg:block" aria-hidden />
+                  <div className="absolute -bottom-3 -left-3 h-16 w-16 rounded-xl border border-amber-400/10 hidden lg:block" aria-hidden />
+
                   <div
-                    className="absolute -right-4 -top-4 hidden h-24 w-24 rounded-2xl border border-amber-500/20 bg-amber-500/5 lg:block"
-                    aria-hidden
-                  />
-                  <div
-                    className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-300 shadow-2xl shadow-stone-300/30 dark:border-stone-800 dark:shadow-black/50 sm:aspect-[5/4] lg:aspect-[4/5] lg:min-h-[420px] cursor-pointer group"
+                    className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-stone-200 shadow-2xl shadow-stone-300/30 dark:border-stone-800 dark:shadow-black/60 sm:aspect-[5/4] lg:aspect-[4/5] lg:min-h-[480px] cursor-pointer group"
                     onClick={() =>
                       openLightbox([
-                        {
-                          src: HERO_ROOM_IMAGE,
-                          alt: "Welcoming lodge bedroom with a comfortable bed and soft lighting",
-                        },
-                        {
-                          src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258874/12_gmaf8x.jpg",
-                          alt: "Welcoming",
-                        },
-                        {
-                          src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258874/15_mprf7p.jpg",
-                          alt: "Welcoming",
-                        },
-                        {
-                          src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258872/17_barkhz.jpg",
-                          alt: "Welcoming",
-                        },
-                        {
-                          src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258873/16_glaogh.jpg",
-                          alt: "Welcoming",
-                        },
-                        {
-                          src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776259348/WhatsApp_Image_2026-04-09_at_7.45.29_PM_h02nxj.jpg",
-                          alt: "Welcoming",
-                        },
-                      
+                        { src: HERO_ROOM_IMAGE, alt: "Welcoming lodge bedroom with a comfortable bed and soft lighting" },
+                        { src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258874/12_gmaf8x.jpg", alt: "Welcoming" },
+                        { src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258874/15_mprf7p.jpg", alt: "Welcoming" },
+                        { src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258872/17_barkhz.jpg", alt: "Welcoming" },
+                        { src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776258873/16_glaogh.jpg", alt: "Welcoming" },
+                        { src: "https://res.cloudinary.com/dfq1bz01f/image/upload/v1776259348/WhatsApp_Image_2026-04-09_at_7.45.29_PM_h02nxj.jpg", alt: "Welcoming" },
                       ])
                     }
                   >
@@ -381,17 +398,15 @@ export default function HomePage() {
                       alt="Welcoming lodge bedroom with a comfortable bed and soft lighting"
                       fill
                       priority
-                      className="object-cover transition duration-500 group-hover:scale-105"
+                      className="object-cover transition duration-700 group-hover:scale-105"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                     />
-                    <div
-                      className="absolute inset-0 bg-gradient-to-t from-stone-950/50 via-transparent to-transparent pointer-events-none"
-                      aria-hidden
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-                        Click to view gallery
-                      </span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-stone-950/10 to-transparent" aria-hidden />
+                    <div className="absolute bottom-5 left-5 right-5">
+                      <div className="font-body inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        View photo gallery
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -400,67 +415,66 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* IMPORTANT: Accessibility Warning Banner */}
-        <section className="border-b border-red-800/50 bg-gradient-to-r from-red-950/30 via-red-950/20 to-red-950/30">
-          <div className="mx-auto max-w-6xl px-4 py-5 sm:py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-xl border border-red-800/40 bg-red-950/40 p-5 backdrop-blur-sm shadow-lg">
-              <div className="flex shrink-0 gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-900/60 text-red-400">
-                  <Accessibility className="h-6 w-6" aria-hidden />
+        {/* ── ACCESSIBILITY WARNING ── */}
+        <section className="border-y border-red-900/20 bg-gradient-to-r from-red-950/10 via-red-950/20 to-red-950/10 dark:border-red-800/30 dark:from-red-950/40 dark:via-red-950/30 dark:to-red-950/40">
+          <div className="mx-auto max-w-6xl px-6 py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <div className="flex shrink-0 gap-2">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400">
+                  <Accessibility className="h-5 w-5" aria-hidden />
                 </div>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-900/60 text-amber-500">
-                  <AlertTriangle className="h-6 w-6" aria-hidden />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+                  <AlertTriangle className="h-5 w-5" aria-hidden />
                 </div>
               </div>
-              <div className="flex-1">
-                <p className="mt-1 text-sm leading-relaxed text-red-200/90 sm:text-base">
-                  <strong className="font-semibold text-red-300">
-                    Stairs Only
-                  </strong>
-                  <span className="block mt-2 text-amber-300">
-                    We regret that guests with mobility impairments or those who
-                    use wheelchairs may not be able to access our
-                    accommodations.
-                  </span>
+              <div className="flex-1 font-body">
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">Accessibility Notice — Stairs Only</p>
+                <p className="mt-1 text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+                  We regret that guests with mobility impairments or those who use wheelchairs may not be able to access our accommodations. All rooms are on upper floors with no elevator access.
                 </p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-900/60 px-3 py-1 text-xs font-medium text-red-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                    Stairs only
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-900/60 px-3 py-1 text-xs font-medium text-red-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                    No wheelchair access
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-900/60 px-3 py-1 text-xs font-medium text-amber-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                    Ground floor unavailable
-                  </span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {["Stairs only", "No wheelchair access", "Ground floor unavailable"].map((tag, i) => (
+                    <span key={tag} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${i < 2 ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-red-500' : 'bg-amber-500'}`} />
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Room gallery */}
-        <section className="border-b border-stone-200 bg-stone-100/60 py-16 dark:border-stone-800 dark:bg-stone-900/35 sm:py-24">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="max-w-2xl">
-              <h2 className="font-serif text-3xl font-medium text-stone-900 dark:text-white sm:text-4xl">
-                Our rooms
-              </h2>
-              <p className="mt-4 text-lg leading-relaxed text-stone-600 dark:text-stone-400">
-                All singles — so you always know what you are booking. Pick the
-                tier and price that match your trip; photos below illustrate the
-                calm, tidy standard we keep across the lodge.
-              </p>
+        {/* ── ROOM GALLERY ── */}
+        <section className="border-b border-stone-200/60 bg-stone-50 py-20 dark:border-stone-800/40 dark:bg-stone-900/20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-14">
+              <div>
+                <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Accommodations</p>
+                <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
+                  Our rooms
+                </h2>
+                <p className="font-body mt-4 max-w-lg text-base leading-relaxed text-stone-500 dark:text-stone-400">
+                  All singles — so you always know what you're booking. Pick the tier that suits your trip.
+                </p>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="font-body shrink-0 border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800"
+              >
+                <Link href="/register" className="inline-flex items-center gap-2">
+                  View availability
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
 
-            <div className="mt-12 grid gap-8 sm:grid-cols-2">
-              {ROOM_GALLERY.map((room) => (
+            <div className="grid gap-6 sm:grid-cols-2">
+              {ROOM_GALLERY.map((room, idx) => (
                 <article
                   key={room.src}
-                  className="group overflow-hidden rounded-2xl border border-stone-300 bg-white shadow-lg transition hover:border-amber-400/40 hover:shadow-xl dark:border-stone-800 dark:bg-stone-900/40 dark:hover:border-amber-900/40"
+                  className="card-shine group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-all hover:border-amber-300/50 hover:shadow-lg dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-700/30"
                 >
                   <div
                     className="relative aspect-[16/10] overflow-hidden cursor-pointer"
@@ -469,9 +483,8 @@ export default function HomePage() {
                         room.images.map((image) => ({
                           src: image.src,
                           alt: image.alt,
-                          caption:
-                            "caption" in image ? image.caption : undefined,
-                        })),
+                          caption: "caption" in image ? image.caption : undefined,
+                        }))
                       )
                     }
                   >
@@ -479,31 +492,36 @@ export default function HomePage() {
                       src={room.src}
                       alt={room.alt}
                       fill
-                      className="object-cover transition duration-700 ease-out group-hover:scale-105"
+                      className="img-hover object-cover"
                       sizes="(max-width: 640px) 100vw, 50vw"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-                        Click to view gallery
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-body opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 bg-white/90 dark:bg-stone-900/90 text-stone-900 dark:text-white px-4 py-2 rounded-full text-xs font-medium tracking-wide shadow-lg">
+                        View gallery
                       </span>
                     </div>
                   </div>
-                  <div className="p-6 sm:p-7">
-                    <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                      {"caption" in room && typeof room.caption === "string"
-                        ? room.caption
-                        : ""}
+                  <div className="p-7">
+                    <p className="font-body text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+                      {"caption" in room && typeof room.caption === "string" ? room.caption : ""}
                     </p>
-                    <div className="mt-3 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-body text-xs text-emerald-600 dark:text-emerald-400">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Available
+                      </div>
+                      <Button
+                        asChild
+                        variant="ghost"
+                        className="font-body h-auto p-0 text-xs font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+                      >
+                        <Link href="/register" className="inline-flex items-center gap-1">
+                          Check dates & book
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
                     </div>
-                    <Button
-                      asChild
-                      variant="link"
-                      className="mt-3 h-auto p-0 text-amber-400 hover:text-amber-300"
-                    >
-                      <Link href="/register">Check dates &amp; book →</Link>
-                    </Button>
                   </div>
                 </article>
               ))}
@@ -511,69 +529,64 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Location maps + directions */}
-        <section className="border-b border-stone-200 bg-white py-14 dark:border-stone-800 dark:bg-stone-950/70 sm:py-16">
-          <div className="mx-auto max-w-6xl px-4">
-              <h2 className="font-serif text-3xl font-medium text-stone-900 dark:text-white sm:text-4xl">
-              Find Waterhouse Lodge
-            </h2>
-            <p className="mt-3 max-w-3xl text-stone-600 dark:text-stone-300">
-              See our location in Accra and get directions instantly with Google
-              Maps.
-            </p>
-            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="relative overflow-hidden rounded-2xl border border-stone-300 bg-white dark:border-stone-800 dark:bg-stone-900">
+        {/* ── MAP & LOCATION ── */}
+        <section className="border-b border-stone-200/60 bg-white py-20 dark:border-stone-800/40 dark:bg-stone-950 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="mb-12">
+              <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Location</p>
+              <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
+                Find us in Accra
+              </h2>
+              <p className="font-body mt-4 max-w-xl text-base leading-relaxed text-stone-500 dark:text-stone-400">
+                Situated in Adenta, a calm residential neighbourhood in Greater Accra. Easy to reach, quiet to stay in.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+              <div className="relative overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm">
                 <iframe
                   src={mapsEmbedSrc}
                   width="100%"
-                  height="300"
+                  height="340"
                   loading="lazy"
                   title="Waterhouse Lodge location map"
-                  className="min-h-[280px] w-full"
+                  className="min-h-[300px] w-full"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
-                {/* Google only shows the official lodging/bed pin for claimed Business Profiles; this card mirrors a place label on the map. */}
-                <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-10 sm:right-auto sm:max-w-sm">
-                  <div className="flex items-start gap-3 rounded-lg border border-stone-200/90 bg-white/95 px-3 py-2.5 shadow-lg backdrop-blur-sm dark:border-stone-600 dark:bg-stone-900/95">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-800 dark:bg-amber-500/25 dark:text-amber-300"
-                      aria-hidden
-                    >
-                      <BedDouble className="h-5 w-5" />
+                <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-10 sm:right-auto sm:max-w-sm">
+                  <div className="flex items-start gap-3 rounded-2xl border border-stone-200/80 bg-white/97 px-4 py-3 shadow-xl backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/97">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
+                      <BedDouble className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-tight text-stone-900 dark:text-white">
-                        {LODGE_MAP_NAME}
-                      </p>
-                      <p className="mt-0.5 text-xs leading-snug text-stone-600 dark:text-stone-400">
-                        {LODGE_MAP_STREET}
-                      </p>
-                      <a
-                        href={mapsPlaceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="pointer-events-auto mt-2 inline-block text-xs font-medium text-amber-700 underline-offset-2 hover:underline dark:text-amber-400"
-                      >
-                        Open in Google Maps
+                      <p className="font-body text-sm font-semibold text-stone-900 dark:text-white">{LODGE_MAP_NAME}</p>
+                      <p className="font-body mt-0.5 text-xs leading-snug text-stone-500 dark:text-stone-400">{LODGE_MAP_STREET}</p>
+                      <a href={mapsPlaceUrl} target="_blank" rel="noreferrer" className="pointer-events-auto font-body mt-2 inline-block text-xs font-medium text-amber-600 hover:underline dark:text-amber-400 underline-offset-2">
+                        Open in Google Maps ↗
                       </a>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl border border-stone-300 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
-                <p className="text-sm text-stone-600 dark:text-stone-400">Address:</p>
-                <p className="mt-1 font-semibold text-stone-900 dark:text-white">
-                  {LODGE_MAP_NAME}, {LODGE_MAP_STREET}
-                </p>
-                <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
-                  Open daily 10:00–22:00. Reception desk on site.
-                </p>
+
+              <div className="flex flex-col gap-4">
+                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 dark:border-stone-800 dark:bg-stone-900/60">
+                  <p className="font-body text-xs font-medium tracking-widest text-stone-400 uppercase mb-3">Address</p>
+                  <p className="font-body text-sm font-semibold text-stone-900 dark:text-white leading-relaxed">{LODGE_MAP_NAME}</p>
+                  <p className="font-body mt-1 text-sm text-stone-500 dark:text-stone-400 leading-relaxed">{LODGE_MAP_STREET}</p>
+                </div>
+                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 dark:border-stone-800 dark:bg-stone-900/60">
+                  <p className="font-body text-xs font-medium tracking-widest text-stone-400 uppercase mb-3">Reception</p>
+                  <p className="font-body text-sm text-stone-600 dark:text-stone-300">Open daily 10:00 – 22:00</p>
+                  <p className="font-body mt-1 text-sm text-stone-500">Desk staffed on-site</p>
+                </div>
                 <Button
                   asChild
-                  className="mt-6 w-full bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
+                  className="font-body rounded-xl bg-stone-900 font-medium text-white hover:bg-stone-700 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 h-12"
                 >
-                  <a href={mapsDirectionsUrl} target="_blank" rel="noreferrer">
+                  <a href={mapsDirectionsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">
                     Get directions
+                    <ArrowUpRight className="h-4 w-4" />
                   </a>
                 </Button>
               </div>
@@ -581,10 +594,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Conference room + lodge imagery (replaces former “experience” block) */}
-        <section className="bg-stone-100/70 py-16 dark:bg-transparent sm:py-20">
-          <div className="mx-auto grid max-w-6xl gap-12 px-4 lg:grid-cols-2 lg:items-start lg:gap-16">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-900 shadow-lg shadow-stone-400/40 dark:border-stone-800 dark:shadow-none lg:aspect-auto lg:min-h-[420px]">
+        {/* ── EXPERIENCE / CONFERENCE ── */}
+        <section className="bg-[#FAF8F5] py-20 dark:bg-[#0E0C0A] sm:py-28">
+          <div className="mx-auto grid max-w-6xl gap-14 px-6 lg:grid-cols-2 lg:items-start lg:gap-20">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-stone-200 shadow-xl shadow-stone-200/50 dark:border-stone-800 dark:shadow-black/30 lg:aspect-auto lg:min-h-[460px]">
               <Image
                 src={EXPERIENCE_IMAGE}
                 alt="Bright, comfortable lodge interior"
@@ -592,297 +605,232 @@ export default function HomePage() {
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent to-stone-950/20" />
             </div>
-            <ConferenceAvailabilityLanding className="mt-0 w-full max-w-none" />
+            <div className="flex flex-col justify-center">
+              <p className="font-body mb-4 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Conference & Events</p>
+              <ConferenceAvailabilityLanding className="mt-0 w-full max-w-none" />
+            </div>
           </div>
         </section>
 
-        {/*
-        Social proof (temporarily hidden)
-        <section className="border-y border-stone-200 bg-gradient-to-b from-stone-100 to-white py-16 dark:border-stone-800 dark:from-stone-900/80 dark:to-stone-950">
-          <div className="mx-auto max-w-4xl px-4 text-center">
-            <div
-              className="flex justify-center gap-1 text-amber-400"
-              aria-label="5 out of 5 stars"
-            >
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className="h-5 w-5 fill-amber-400 text-amber-400"
-                  aria-hidden
-                />
-              ))}
+        {/* ── WHY US ── */}
+        <section className="border-y border-stone-200/60 bg-stone-50 py-20 dark:border-stone-800/40 dark:bg-stone-900/20 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="text-center mb-14">
+              <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Why guests choose us</p>
+              <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
+                Simple, honest lodging
+              </h2>
+              <p className="font-body mx-auto mt-4 max-w-xl text-base text-stone-500 dark:text-stone-400">
+                Transparent pricing, proper registration, and a standard of care that makes you feel at home.
+              </p>
             </div>
-            <Quote
-              className="mx-auto mt-6 h-10 w-10 text-stone-400 dark:text-stone-600"
-              aria-hidden
-            />
-            <blockquote className="mt-4 font-serif text-xl leading-relaxed text-stone-700 dark:text-stone-200 sm:text-2xl">
-              &ldquo;Easy online booking, room matched the photos, and the team
-              made check-in smooth.&rdquo;
-            </blockquote>
-            <p className="mt-4 text-sm text-stone-500 dark:text-stone-500">
-              Sample guest quote — replace with real testimonials.
-            </p>
-          </div>
-        </section>
-        */}
 
-        {/* Why choose us — icon cards */}
-        <section className="border-b border-stone-200 bg-stone-100/60 py-16 dark:border-stone-800 dark:bg-stone-900/30 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <h2 className="text-center font-serif text-2xl font-medium text-stone-900 dark:text-white sm:text-3xl">
-              Why guests choose us
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-stone-600 dark:text-stone-400">
-              Simple booking, transparent pricing, and proper lodging
-              registration for a smooth stay.
-            </p>
-            <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                {
-                  icon: CalendarRange,
-                  title: "Easy booking",
-                  text: "Choose your dates and see available rooms clearly, with no guessing.",
-                },
-                {
-                  icon: Sparkles,
-                  title: "Rates in GHS",
-                  text: "Compare nightly prices in Ghana Cedis before you commit.",
-                },
-                {
-                  icon: ShieldCheck,
-                  title: "Guest registration",
-                  text: "We securely collect the information required under Ghana regulations.",
-                },
-                {
-                  icon: Wifi,
-                  title: "Comfort first",
-                  text: "Clean, well-kept rooms designed for rest or remote work.",
-                },
+                { icon: CalendarRange, title: "Easy booking", text: "Choose your dates and see available rooms clearly, with no guessing." },
+                { icon: Sparkles, title: "Rates in GHS", text: "Compare nightly prices in Ghana Cedis before you commit to anything." },
+                { icon: ShieldCheck, title: "Guest registration", text: "We securely collect the information required under Ghana regulations." },
+                { icon: Wifi, title: "Comfort first", text: "Clean, well-kept rooms designed for genuine rest or remote work." },
               ].map((item) => (
                 <li key={item.title}>
-                  <Card className="h-full border-stone-300 bg-white shadow-none transition hover:border-amber-400/50 dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-900/50">
-                    <CardContent className="p-6">
-                      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
-                        <item.icon className="h-5 w-5" aria-hidden />
-                      </div>
-                      <h3 className="font-semibold text-stone-900 dark:text-white">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                        {item.text}
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="card-shine h-full rounded-2xl border border-stone-200 bg-white p-6 transition-all hover:border-amber-300/50 hover:shadow-md dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-700/30">
+                    <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-amber-200/50 bg-amber-50 text-amber-600 dark:border-amber-900/30 dark:bg-amber-900/20 dark:text-amber-400">
+                      <item.icon className="h-5 w-5" aria-hidden />
+                    </div>
+                    <h3 className="font-body font-semibold text-stone-900 dark:text-white">{item.title}</h3>
+                    <p className="font-body mt-2 text-sm leading-relaxed text-stone-500 dark:text-stone-400">{item.text}</p>
+                  </div>
                 </li>
               ))}
             </ul>
-            <div className="mt-10 rounded-xl border border-red-800/30 bg-red-950/20 p-5 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full bg-red-900/40 px-4 py-1.5 text-xs font-medium text-red-300">
-                <Accessibility className="h-3.5 w-3.5" />
-                Accessibility information
+
+            <div className="mt-8 flex items-start gap-4 rounded-2xl border border-red-200/60 bg-red-50/50 p-5 dark:border-red-900/30 dark:bg-red-950/20">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-500 dark:bg-red-900/40 dark:text-red-400">
+                <Accessibility className="h-4 w-4" />
               </div>
-              <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
-                Please note: Waterhouse Lodge does not have an elevator and is
-                not wheelchair accessible. All guest rooms are located on upper
-                floors and can only be reached via stairs. We apologize for any
-                inconvenience this may cause.
+              <p className="font-body text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+                <span className="font-semibold text-red-600 dark:text-red-400">Accessibility: </span>
+                Waterhouse Lodge does not have an elevator and is not wheelchair accessible. All guest rooms are on upper floors reachable only via stairs. We apologise for any inconvenience.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Contact Section */}
-        <section className="border-b border-stone-200 bg-gradient-to-b from-stone-100/60 to-white py-16 dark:border-stone-800 dark:from-stone-900/50 dark:to-stone-950 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <h2 className="font-serif text-3xl font-medium text-stone-900 dark:text-white sm:text-4xl">
-                Get in touch
-              </h2>
-              <p className="mt-4 text-stone-600 dark:text-stone-400">
-                Have questions about your stay? Reach out to us anytime. We're
-                here to help make your experience memorable.
+        {/* ── CONTACT ── */}
+        <section id="contact" className="border-b border-stone-200/60 bg-white py-20 dark:border-stone-800/40 dark:bg-stone-950 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="text-center mb-14">
+              <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Reach us</p>
+              <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">Get in touch</h2>
+              <p className="font-body mx-auto mt-4 max-w-xl text-base text-stone-500 dark:text-stone-400">
+                Have questions about your stay? We're happy to help — before, during, or after your visit.
               </p>
             </div>
 
-            <div className="mx-auto max-w-2xl space-y-6">
-                <div className="rounded-2xl border border-stone-300 bg-white p-6 dark:border-stone-800 dark:bg-stone-900/40 sm:p-8">
-                  <h3 className="text-xl font-semibold text-stone-900 dark:text-white mb-6">
-                    Contact Information
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="font-medium text-stone-900 dark:text-white">Address</p>
-                        <p className="text-sm text-stone-400">
-                       
-                        Waterhouse Lodge, Nii Opkoti Adjei Commey, Adenta, Accra, Ghana (Between Roman Catholic Housing Commandos and Victory Presby Church Adenta)
-                        </p>
+            <div className="mx-auto max-w-2xl space-y-5">
+              {/* Contact info */}
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 dark:border-stone-800 dark:bg-stone-900/40">
+                <h3 className="font-display text-xl font-medium text-stone-900 dark:text-white mb-6">Contact Information</h3>
+                <div className="space-y-5">
+                  {[
+                    {
+                      icon: MapPin,
+                      label: "Address",
+                      value: "Waterhouse Lodge, Nii Opkoti Adjei Commey, Adenta, Accra, Ghana (Between Roman Catholic Housing Commandos and Victory Presby Church Adenta)"
+                    },
+                    { icon: Phone, label: "Phone", value: "+233 (0) 53 553 6119" },
+                    { icon: Mail, label: "Email", value: "info@waterhouselodge.com" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-start gap-4">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-amber-500 dark:border-stone-700 dark:bg-stone-800">
+                        <item.icon className="h-4 w-4" />
+                      </span>
+                      <div className="font-body">
+                        <p className="text-xs font-medium tracking-wide text-stone-400 uppercase">{item.label}</p>
+                        <p className="mt-0.5 text-sm text-stone-700 dark:text-stone-300 leading-relaxed">{item.value}</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="font-medium text-stone-900 dark:text-white">Phone</p>
-                        <p className="text-sm text-stone-400">
-                          +233 (0) 53 553 6119
-                        </p>
-                        {/* <p className="text-sm text-stone-400">
-                          +233 (0) 54 123 4567
-                        </p> */}
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="font-medium text-stone-900 dark:text-white">Email</p>
-                        <p className="text-sm text-stone-400">
-                          info@waterhouselodge.com
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
+              </div>
 
-                <div className="rounded-2xl border border-stone-300 bg-white p-6 dark:border-stone-800 dark:bg-stone-900/40 sm:p-8">
-                  <h3 className="text-xl font-semibold text-stone-900 dark:text-white mb-6">
-                    Opening Hours
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-                      <div className="flex-1">
-                        <div className="flex justify-between py-1">
-                          <span className="text-stone-400">Monday - Friday</span>
-                          <span className="text-stone-900 dark:text-white">10:00 AM - 10:00 PM</span>
-                        </div>
-                        <div className="flex justify-between py-1">
-                          <span className="text-stone-400">Saturday</span>
-                          <span className="text-stone-900 dark:text-white">10:00 AM - 8:00 PM</span>
-                        </div>
-                        <div className="flex justify-between py-1">
-                          <span className="text-stone-400">Sunday</span>
-                          <span className="text-stone-900 dark:text-white">12:00 PM - 6:00 PM</span>
-                        </div>
+              {/* Hours */}
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 dark:border-stone-800 dark:bg-stone-900/40">
+                <h3 className="font-display text-xl font-medium text-stone-900 dark:text-white mb-6">Opening Hours</h3>
+                <div className="flex items-start gap-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-amber-500 dark:border-stone-700 dark:bg-stone-800">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                  <div className="font-body flex-1 space-y-2">
+                    {[
+                      { day: "Monday – Friday", hours: "10:00 AM – 10:00 PM" },
+                      { day: "Saturday", hours: "10:00 AM – 8:00 PM" },
+                      { day: "Sunday", hours: "12:00 PM – 6:00 PM" },
+                    ].map((row) => (
+                      <div key={row.day} className="flex justify-between text-sm">
+                        <span className="text-stone-500 dark:text-stone-400">{row.day}</span>
+                        <span className="font-medium text-stone-900 dark:text-stone-100">{row.hours}</span>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Social Media Section */}
-                <div className="rounded-2xl border border-stone-300 bg-white p-6 dark:border-stone-800 dark:bg-stone-900/40 sm:p-8">
-                  <h3 className="text-xl font-semibold text-stone-900 dark:text-white mb-6">
-                    Follow Us
-                  </h3>
-                  <div className="flex flex-wrap gap-4">
-                    {socialLinks.map((social) => (
-                      <a
-                        key={social.name}
-                        href={social.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`group flex items-center gap-2 rounded-full ${social.bgColor} px-4 py-2 transition-all duration-300 hover:scale-105 ${social.color} hover:text-white`}
-                      >
-                        <social.icon className="h-5 w-5" />
-                        <span className="text-sm font-medium">{social.name}</span>
-                      </a>
                     ))}
                   </div>
-                  <div className="mt-6 pt-6 border-t border-stone-300 dark:border-stone-700">
-                    <p className="text-sm text-stone-600 text-center dark:text-stone-400">
-                      Follow us on social media for updates, special offers, and
-                      a glimpse into life at Waterhouse Lodge!
-                    </p>
-                  </div>
                 </div>
+              </div>
+
+              {/* Social */}
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 dark:border-stone-800 dark:bg-stone-900/40">
+                <h3 className="font-display text-xl font-medium text-stone-900 dark:text-white mb-6">Follow Us</h3>
+                <div className="flex flex-wrap gap-3">
+                  {socialLinks.map((social) => (
+                    <a
+                      key={social.name}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`font-body group flex items-center gap-2 rounded-xl border border-stone-200 ${social.bgColor} px-4 py-2.5 text-sm font-medium text-stone-700 transition-all hover:text-white hover:border-transparent dark:border-stone-700 dark:text-stone-300 ${social.color}`}
+                    >
+                      <social.icon className="h-4 w-4 shrink-0" />
+                      {social.name}
+                    </a>
+                  ))}
+                </div>
+                <p className="font-body mt-5 text-xs text-stone-400 text-center border-t border-stone-200 dark:border-stone-700 pt-5">
+                  Stay connected for updates, offers, and a glimpse of life at Waterhouse Lodge.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* How it works */}
-        <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-16">
+        {/* ── HOW IT WORKS ── */}
+        <section className="py-20 sm:py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="grid gap-14 lg:grid-cols-2 lg:items-start lg:gap-20">
               <div>
-                <h2 className="font-serif text-2xl font-medium text-stone-900 dark:text-white sm:text-3xl">
+                <p className="font-body mb-4 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Process</p>
+                <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
                   How booking works
                 </h2>
-                <ol className="mt-8 space-y-6">
+                <ol className="mt-10 space-y-7">
                   {[
                     "Create a free guest account with your name, phone, and email.",
-                    "Choose stay dates—we only show rooms that are available.",
-                    "Pick your room by price and complete the registration details for your stay.",
-                    "Arrive on check-in day; we verify ID and welcome you.",
+                    "Choose your stay dates — we only show rooms that are actually available.",
+                    "Pick a room by price and complete the registration details for your stay.",
+                    "Arrive on check-in day; we verify ID and welcome you warmly.",
                   ].map((step, i) => (
-                    <li key={i} className="flex gap-4">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-sm font-bold text-amber-400">
+                    <li key={i} className="flex gap-5">
+                      <span className="font-display number-badge flex h-9 w-9 shrink-0 items-center justify-center text-lg font-light">
                         {i + 1}
                       </span>
-                      <p className="pt-0.5 leading-relaxed text-stone-600 dark:text-stone-300">
-                        {step}
-                      </p>
+                      <p className="font-body pt-1 text-sm leading-relaxed text-stone-500 dark:text-stone-400">{step}</p>
                     </li>
                   ))}
                 </ol>
               </div>
-              <Card className="border-stone-300 bg-gradient-to-br from-white to-stone-100 p-8 dark:border-stone-800 dark:from-stone-900 dark:to-stone-950 lg:p-10">
-                <div className="flex items-start gap-3">
-                  <MapPin
-                    className="mt-0.5 h-5 w-5 shrink-0 text-amber-400"
-                    aria-hidden
-                  />
+
+              <div className="rounded-3xl border border-stone-200 bg-stone-50 p-8 dark:border-stone-800 dark:bg-stone-900/40 lg:p-10">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-amber-500 dark:border-stone-700 dark:bg-stone-800">
+                    <MapPin className="h-4.5 w-4.5" />
+                  </span>
                   <div>
-                    <h3 className="font-semibold text-stone-900 dark:text-white">
-                      Reception & local guidance
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                      Ask reception for directions, transport tips, and places to
-                      visit around Accra. We are happy to help you plan your day.
+                    <h3 className="font-body font-semibold text-stone-900 dark:text-white">Reception & local guidance</h3>
+                    <p className="font-body mt-2 text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+                      Ask our reception team for directions, transport tips, and the best places to visit around Accra. We're here to help you plan your days.
                     </p>
                   </div>
                 </div>
-                <div className="mt-8 rounded-xl border border-stone-300 bg-white p-6 dark:border-stone-800 dark:bg-stone-950/50">
-                  <p className="text-sm font-medium text-stone-900 dark:text-white">
-                    Questions before you book?
-                  </p>
-                  <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
-                    Message or call us anytime, or reserve online—it only takes
-                    a few minutes.
+
+                <div className="mt-8 rounded-2xl border border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900/60">
+                  <p className="font-body text-sm font-semibold text-stone-900 dark:text-white">Questions before you book?</p>
+                  <p className="font-body mt-2 text-sm text-stone-500 dark:text-stone-400">
+                    Message or call us anytime — or reserve online in just a few minutes.
                   </p>
                   <Button
                     asChild
-                    className="mt-4 w-full bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400 sm:w-auto"
+                    className="font-body mt-5 w-full rounded-xl bg-stone-900 font-medium text-white hover:bg-stone-700 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 sm:w-auto"
                   >
-                    <Link href="/register">Start your reservation</Link>
+                    <Link href="/register" className="inline-flex items-center gap-2">
+                      Start your reservation
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Link>
                   </Button>
                 </div>
-              </Card>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="border-t border-stone-200 bg-amber-100/40 py-14 dark:border-stone-800 dark:bg-amber-500/10 sm:py-16">
-          <div className="mx-auto max-w-3xl px-4 text-center">
-            <h2 className="font-serif text-2xl font-medium text-stone-900 dark:text-white sm:text-3xl">
-              Ready to stay with us?
+        {/* ── FINAL CTA ── */}
+        <section className="relative overflow-hidden border-t border-stone-200/60 dark:border-stone-800/40">
+          <div className="absolute inset-0 hero-gradient" aria-hidden />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} aria-hidden />
+          <div className="relative mx-auto max-w-3xl px-6 py-20 text-center sm:py-24">
+            <p className="font-body mb-4 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Reserve today</p>
+            <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl lg:text-6xl">
+              Ready to stay<br />
+              <em className="italic text-amber-600 dark:text-amber-400">with us?</em>
             </h2>
-            <p className="mt-3 text-stone-700 dark:text-stone-300">
-              Lock in your room today. Sign in anytime to view your booking
-              (changes subject to lodge policy).
+            <p className="font-body mx-auto mt-5 max-w-md text-base leading-relaxed text-stone-500 dark:text-stone-400">
+              Lock in your room today. Sign in anytime to view your booking — changes subject to lodge policy.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
                 asChild
                 size="lg"
-                className="h-12 min-w-[200px] bg-amber-500 font-semibold text-stone-950 hover:bg-amber-400"
+                className="font-body h-13 min-w-[200px] rounded-xl bg-stone-900 px-8 text-sm font-medium text-white hover:bg-stone-700 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
               >
-                <Link href="/register">Reserve now</Link>
+                <Link href="/register" className="inline-flex items-center gap-2">
+                  Reserve now
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
               </Button>
               <Button
                 asChild
                 size="lg"
                 variant="ghost"
-                className="h-12 text-stone-700 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:text-white"
+                className="font-body h-13 rounded-xl text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/50"
               >
                 <Link href="/login">Guest login</Link>
               </Button>
@@ -891,23 +839,26 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="border-t border-stone-200 bg-stone-100 py-10 dark:border-stone-800 dark:bg-stone-950">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-stone-200/60 bg-stone-900 py-12 dark:border-stone-800/40 dark:bg-stone-950">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="font-semibold text-stone-900 dark:text-white">Waterhouse Lodge</p>
-              <p className="mt-2 text-sm text-stone-500">
-                Comfortable stays · Adenta, Accra, Ghana
-              </p>
-              {/* Social links in footer */}
-              <div className="mt-4 flex gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-400/10 text-amber-400">
+                  <BedDouble className="h-4 w-4" />
+                </span>
+                <p className="font-display text-base font-medium text-white">Waterhouse Lodge</p>
+              </div>
+              <p className="font-body mt-2 text-sm text-stone-500">Comfortable stays · Adenta, Accra, Ghana</p>
+              <div className="mt-5 flex gap-3">
                 {socialLinks.map((social) => (
                   <a
                     key={social.name}
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`rounded-full ${social.bgColor} p-2 transition-all duration-300 hover:scale-110 ${social.color}`}
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl border border-stone-700 bg-stone-800 text-stone-400 transition-all hover:scale-110 hover:text-white ${social.color}`}
                     aria-label={social.name}
                   >
                     <social.icon className="h-4 w-4" />
@@ -915,34 +866,32 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link
-                href="/login"
-                className="text-stone-400 hover:text-amber-400"
-              >
-                Guest login
-              </Link>
-              <Link
-                href="/register"
-                className="text-stone-400 hover:text-amber-400"
-              >
-                New guest registration
-              </Link>
-              <Link
-                href="#contact"
-                className="text-stone-400 hover:text-amber-400"
-              >
-                Contact us
-              </Link>
-            </div>
+
+            <nav className="flex flex-col gap-2">
+              {[
+                { href: "/login", label: "Guest login" },
+                { href: "/register", label: "New guest registration" },
+                { href: "#contact", label: "Contact us" },
+              ].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="font-body text-sm text-stone-500 transition-colors hover:text-amber-400"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           </div>
-          <div className="mt-8 text-center text-xs text-stone-500">
-            <p>&copy; 2024 Waterhouse Lodge. All rights reserved.</p>
+
+          <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-stone-800 pt-6 sm:flex-row">
+            <p className="font-body text-xs text-stone-600">&copy; 2024 Waterhouse Lodge. All rights reserved.</p>
+            <div className="gold-line h-px w-16 hidden sm:block" />
           </div>
         </div>
       </footer>
 
-      {/* Lightbox component */}
+      {/* Lightbox */}
       <ImageLightbox
         images={lightboxImages}
         initialIndex={selectedImageIndex}

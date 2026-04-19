@@ -1,12 +1,7 @@
-"use server";
-
+import { NextResponse } from "next/server";
 import { uploadIdPhoto } from "@/lib/server/cloudinary";
 
-/**
- * Server action to upload ID photo to Cloudinary
- * Validates the base64 data and uploads to Cloudinary
- */
-export async function uploadIdPhotoAction(
+async function uploadIdPhotoAction(
   base64Data: string,
   bookingId?: string,
 ): Promise<{ success: boolean; url?: string; error?: string }> {
@@ -30,4 +25,29 @@ export async function uploadIdPhotoAction(
       error: error instanceof Error ? error.message : "Failed to upload photo",
     };
   }
+}
+
+export async function POST(req: Request) {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const base64Data =
+    typeof (body as { base64Data?: unknown })?.base64Data === "string"
+      ? (body as { base64Data: string }).base64Data
+      : "";
+  const bookingId =
+    typeof (body as { bookingId?: unknown })?.bookingId === "string"
+      ? (body as { bookingId: string }).bookingId
+      : undefined;
+
+  if (!base64Data) {
+    return NextResponse.json({ success: false, error: "base64Data is required" }, { status: 400 });
+  }
+
+  const result = await uploadIdPhotoAction(base64Data, bookingId);
+  return NextResponse.json(result, { status: result.success ? 200 : 400 });
 }
