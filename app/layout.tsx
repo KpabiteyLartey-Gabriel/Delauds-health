@@ -9,20 +9,28 @@ const SITE_URL = "https://waterhouselodge.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Waterhouse Lodge | Adenta, Accra",
-    template: "%s | Waterhouse Lodge",
+    default: "Waterhouse Lodge – Hotel & Lodge in Adenta, Accra",
+    template: "%s | Waterhouse Lodge Adenta",
   },
   description:
-    "Waterhouse Lodge in Adenta, Accra offers comfortable rooms with clear GHS rates, online availability, and compliant guest registration.",
+    "Looking for a hotel or lodge in Adenta, Accra? Waterhouse Lodge offers clean, comfortable rooms with transparent GHS pricing, online booking, and 24-hour service in Adenta, Greater Accra.",
   applicationName: "Waterhouse Lodge",
   keywords: [
+    "lodge in Adenta",
+    "lodge in Accra",
+    "hotel in Adenta",
+    "hotel in Accra",
+    "Adenta lodge",
+    "Adenta hotel",
     "Waterhouse Lodge",
     "Waterhouse Lodge Adenta",
     "Waterhouse Lodge Accra",
-    "hotel in Adenta",
-    "lodge in Accra",
+    "budget hotel Accra",
+    "guest house Adenta",
+    "accommodation Adenta Ghana",
     "book room in Accra",
     "Ghana lodge booking",
+    "affordable lodge Accra",
   ],
   alternates: {
     canonical: "/",
@@ -32,15 +40,15 @@ export const metadata: Metadata = {
     locale: "en_GH",
     url: SITE_URL,
     siteName: "Waterhouse Lodge",
-    title: "Waterhouse Lodge | Adenta, Accra",
+    title: "Waterhouse Lodge – Hotel & Lodge in Adenta, Accra",
     description:
-      "Book your stay at Waterhouse Lodge in Adenta, Accra with clear pricing and quick online booking.",
+      "Hotel and lodge in Adenta, Accra. Book a clean, comfortable room at Waterhouse Lodge with clear GHS pricing and quick online booking.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Waterhouse Lodge | Adenta, Accra",
+    title: "Waterhouse Lodge – Hotel & Lodge in Adenta, Accra",
     description:
-      "Book your stay at Waterhouse Lodge in Adenta, Accra with clear pricing and quick online booking.",
+      "Hotel and lodge in Adenta, Accra. Book a clean, comfortable room at Waterhouse Lodge with clear GHS pricing and quick online booking.",
   },
   robots: {
     index: true,
@@ -63,6 +71,45 @@ export const metadata: Metadata = {
   },
 };
 
+const localBusinessJsonLd = {
+  "@context": "https://schema.org",
+  "@type": ["LodgingBusiness", "Hotel"],
+  name: "Waterhouse Lodge",
+  alternateName: ["Waterhouse Hotel Adenta", "Waterhouse Lodge Adenta"],
+  description:
+    "Waterhouse Lodge is a hotel and lodge in Adenta, Accra, Ghana, offering clean comfortable rooms with transparent GHS pricing and online booking.",
+  url: "https://waterhouselodge.com",
+  telephone: "+233000000000",
+  email: "info.waterhouselodge@gmail.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Adenta",
+    addressLocality: "Accra",
+    addressRegion: "Greater Accra",
+    addressCountry: "GH",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 5.7167,
+    longitude: -0.1667,
+  },
+  areaServed: "Adenta, Accra, Ghana",
+  priceRange: "GHS",
+  currenciesAccepted: "GHS",
+  paymentAccepted: "Cash, Online Payment",
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: [
+        "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday",
+      ],
+      opens: "00:00",
+      closes: "23:59",
+    },
+  ],
+  sameAs: [],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -73,6 +120,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="/favicon.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+        />
       </head>
       <body className="min-h-screen antialiased">
         <AppProviders>
