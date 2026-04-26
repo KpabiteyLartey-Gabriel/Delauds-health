@@ -48,6 +48,15 @@ type HotelContextValue = {
     fullName: string,
     phone: string,
   ) => Promise<{ ok: true } | { error: string }>;
+  forgotPassword: (email: string) => Promise<{ ok: true } | { error: string }>;
+  resetPassword: (
+    token: string,
+    password: string,
+  ) => Promise<{ ok: true } | { error: string }>;
+  adminResetStaffPasswordAction: (
+    userId: string,
+    password: string,
+  ) => Promise<{ ok: true } | { error: string }>;
   refresh: () => Promise<void>;
   createBooking: (
     roomIdOrIds: string | string[],
@@ -294,6 +303,57 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       return { ok: true as const };
     },
     [loadFromApi],
+  );
+
+  const forgotPassword = useCallback(async (email: string) => {
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await parseJsonSafe(res);
+    if (!res.ok) {
+      return {
+        error: (data as { error?: string }).error || "Failed to send reset link.",
+      };
+    }
+    return { ok: true as const };
+  }, []);
+
+  const resetPassword = useCallback(async (token: string, password: string) => {
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    });
+    const data = await parseJsonSafe(res);
+    if (!res.ok) {
+      return {
+        error: (data as { error?: string }).error || "Failed to reset password.",
+      };
+    }
+    return { ok: true as const };
+  }, []);
+
+  const adminResetStaffPasswordAction = useCallback(
+    async (userId: string, password: string) => {
+      const res = await fetch("/api/auth/admin-reset-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, password }),
+      });
+      const data = await parseJsonSafe(res);
+      if (!res.ok)
+        return {
+          error: (data as { error?: string }).error || "Failed.",
+        };
+      await refresh();
+      return { ok: true as const };
+    },
+    [refresh],
   );
 
   const createBooking = useCallback(
@@ -636,6 +696,9 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       register,
+      forgotPassword,
+      resetPassword,
+      adminResetStaffPasswordAction,
       refresh,
       createBooking,
       confirmPaymentAction,
@@ -662,6 +725,9 @@ export function HotelProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       register,
+      forgotPassword,
+      resetPassword,
+      adminResetStaffPasswordAction,
       refresh,
       createBooking,
       confirmPaymentAction,

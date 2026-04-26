@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -99,4 +101,66 @@ html {
   body {
     @apply bg-background text-foreground transition-colors duration-300;
   }
+}
+
+.font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+.font-body { font-family: 'DM Sans', system-ui, sans-serif; }
+
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 60% -10%, rgba(212, 167, 92, 0.12), transparent 60%),
+              radial-gradient(ellipse 50% 40% at 0% 100%, rgba(212, 167, 92, 0.06), transparent);
+}
+
+.dark .hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 60% -10%, rgba(212, 167, 92, 0.08), transparent 60%),
+              radial-gradient(ellipse 50% 40% at 0% 100%, rgba(212, 167, 92, 0.04), transparent);
+}
+
+.section-divider {
+  background: linear-gradient(90deg, transparent, rgba(212, 167, 92, 0.3), transparent);
+  height: 1px;
+  width: 100%;
+}
+
+.gold-line {
+  background: linear-gradient(90deg, #D4A75C, #E8C07E, #D4A75C);
+}
+
+.img-hover { transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.img-hover:hover { transform: scale(1.04); }
+
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-shine::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  z-index: 1;
+}
+
+.card-shine:hover::before { transform: translateX(100%); }
+
+.number-badge {
+  background: linear-gradient(135deg, #D4A75C, #C4904A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

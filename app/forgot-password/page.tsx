@@ -1,12 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Building2 } from "lucide-react";
 import { useHotel } from "@/components/hotel/HotelProvider";
 import { useToast } from "@/hooks/use-toast";
-import type { UserRole } from "@/lib/hotel/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,40 +16,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-function routeForRole(role: UserRole): string {
-  if (role === "admin") return "/admin";
-  if (role === "receptionist") return "/reception";
-  return "/client";
-}
-
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
+  const { forgotPassword, ready } = useHotel();
   const { toast } = useToast();
-  const { login, ready } = useHotel();
+
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ready) return;
-    setLoading(true);
-
+    setSending(true);
     try {
-      const result = await login(email, password);
+      const result = await forgotPassword(email);
       if ("error" in result) {
         toast({
-          title: "Login failed",
+          title: "Could not send reset link",
           description: result.error,
           variant: "destructive",
         });
         return;
       }
-
-      toast({ title: "Welcome back" });
-      router.replace(routeForRole(result.role));
+      toast({
+        title: "Check your email",
+        description:
+          "If a client account exists for that address, a reset link has been sent.",
+      });
+      setEmail("");
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
@@ -64,15 +57,15 @@ export default function LoginPage() {
           <div className="flex justify-center">
             <Building2 className="h-10 w-10 text-amber-700" />
           </div>
-          <CardTitle>Sign in</CardTitle>
+          <CardTitle>Forgot Password</CardTitle>
           <CardDescription>
-            Staff and guests use the same page. You are sent to the right dashboard for your account role.
+            Client accounts can request a password reset link here.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Client email</Label>
               <Input
                 id="email"
                 type="email"
@@ -83,42 +76,21 @@ export default function LoginPage() {
                 className="mt-1"
               />
             </div>
-            <div>
-              <Label htmlFor="pw">Password</Label>
-              <Input
-                id="pw"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
             <Button
               type="submit"
               className="w-full bg-amber-600 hover:bg-amber-700"
-              disabled={loading}
+              disabled={sending}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {sending ? "Sending link..." : "Send reset link"}
             </Button>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-4 dark:text-slate-400">
-            <Link href="/forgot-password" className="text-amber-700 hover:underline">
-              Forgot password (clients)
-            </Link>
+            Admin and receptionist passwords are reset only inside the admin portal.
           </p>
           <p className="text-center text-sm text-slate-500 mt-2 dark:text-slate-400">
-            Admin and receptionist passwords are reset only in the admin portal.
-          </p>
-          <p className="text-center text-sm text-slate-500 mt-2 dark:text-slate-400">
-            <Link href="/register" className="text-amber-700 hover:underline">
-              New guest registration
-            </Link>
-            {" | "}
-            <Link href="/" className="text-slate-600 hover:underline dark:text-slate-300">
-              Home
+            <Link href="/login" className="text-amber-700 hover:underline">
+              Back to sign in
             </Link>
           </p>
         </CardContent>

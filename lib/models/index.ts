@@ -28,6 +28,8 @@ const UserSchema = new Schema(
       maxlength: 320,
     },
     passwordHash: { type: String, required: true, select: false },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpiresAt: { type: Date },
     role: {
       type: String,
       required: true,

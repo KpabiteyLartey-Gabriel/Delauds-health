@@ -24,6 +24,7 @@ import {
   Trash2,
   TrendingDown,
   TrendingUp,
+  KeyRound,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -129,6 +130,7 @@ export function AdminDashboard() {
     fulfillSupplyRequestAction,
     confirmPaymentAction,
     resendCashEmailAction,
+    adminResetStaffPasswordAction,
   } = useHotel();
 
   const [roomNum, setRoomNum] = useState("");
@@ -159,6 +161,11 @@ export function AdminDashboard() {
   const [cashReceivedByBooking, setCashReceivedByBooking] = useState<Record<string, string>>({});
   const [confirmingCashBookingId, setConfirmingCashBookingId] = useState<string | null>(null);
   const [resendingCashEmailBookingId, setResendingCashEmailBookingId] = useState<string | null>(null);
+  const [staffResetUserId, setStaffResetUserId] = useState<string | null>(null);
+  const [staffResetUserLabel, setStaffResetUserLabel] = useState("");
+  const [staffResetPassword, setStaffResetPassword] = useState("");
+  const [staffResetPasswordConfirm, setStaffResetPasswordConfirm] = useState("");
+  const [staffResetSubmitting, setStaffResetSubmitting] = useState(false);
 
   const today = todayISO();
 
@@ -341,6 +348,62 @@ export function AdminDashboard() {
   };
 
   const allUsers = state.users;
+
+  const openStaffResetDialog = (userId: string, label: string) => {
+    setStaffResetUserId(userId);
+    setStaffResetUserLabel(label);
+    setStaffResetPassword("");
+    setStaffResetPasswordConfirm("");
+  };
+
+  const closeStaffResetDialog = () => {
+    setStaffResetUserId(null);
+    setStaffResetUserLabel("");
+    setStaffResetPassword("");
+    setStaffResetPasswordConfirm("");
+  };
+
+  const submitStaffResetPassword = async () => {
+    if (!staffResetUserId) return;
+    if (staffResetPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (staffResetPassword !== staffResetPasswordConfirm) {
+      toast({
+        title: "Passwords do not match",
+        description: "Please enter the same password twice.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStaffResetSubmitting(true);
+    const result = await adminResetStaffPasswordAction(
+      staffResetUserId,
+      staffResetPassword,
+    );
+    setStaffResetSubmitting(false);
+
+    if ("error" in result) {
+      toast({
+        title: "Password reset failed",
+        description: result.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Staff password updated",
+      description: `${staffResetUserLabel} can now sign in with the new password.`,
+    });
+    closeStaffResetDialog();
+  };
 
   const openAddStore = () => {
     setEditingItemId(null);
@@ -1980,6 +2043,9 @@ export function AdminDashboard() {
                               <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                 Bookings
                               </TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                Action
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -2035,6 +2101,19 @@ export function AdminDashboard() {
                                     ) : (
                                       "—"
                                     )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {(u.role === "admin" || u.role === "receptionist") ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 px-2 gap-1 text-xs"
+                                        onClick={() => openStaffResetDialog(u.id, `${u.fullName} (${u.role})`)}
+                                      >
+                                        <KeyRound className="h-3 w-3" />
+                                        Reset password
+                                      </Button>
+                                    ) : null}
                                   </TableCell>
                                 </TableRow>
                               );
@@ -2112,6 +2191,61 @@ export function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* ── Staff Password Reset Dialog ── */}
+      <Dialog
+        open={staffResetUserId !== null}
+        onOpenChange={(open) => { if (!open) closeStaffResetDialog(); }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-slate-600" />
+              Reset staff password
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-slate-500 -mt-2">
+            Setting a new password for{" "}
+            <span className="font-medium text-slate-800">{staffResetUserLabel}</span>.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="staff-reset-pw">New password</Label>
+              <Input
+                id="staff-reset-pw"
+                type="password"
+                autoComplete="new-password"
+                value={staffResetPassword}
+                onChange={(e) => setStaffResetPassword(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="staff-reset-pw-confirm">Confirm password</Label>
+              <Input
+                id="staff-reset-pw-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={staffResetPasswordConfirm}
+                onChange={(e) => setStaffResetPasswordConfirm(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeStaffResetDialog}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-slate-900 hover:bg-slate-800 text-white"
+              onClick={submitStaffResetPassword}
+              disabled={staffResetSubmitting}
+            >
+              {staffResetSubmitting ? "Saving…" : "Set new password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -12,6 +12,19 @@ export const registerSchema = z.object({
   phone: z.string().trim().min(5).max(40),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email().max(320),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(32).max(512),
+  password: z.string().min(8).max(128),
+});
+
+export const adminResetPortalSchema = z.object({
+  userId: z.string().trim().min(1),
+  password: z.string().min(8).max(128),
+});
 export const guestDetailsSchema = z
   .object({
     fullName: z.string().trim().min(1).max(200),
