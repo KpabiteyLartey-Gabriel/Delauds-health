@@ -97,6 +97,7 @@ export function ReceptionDashboard() {
     ready,
     logout,
     createBooking,
+    cancelBookingAction,
     checkInAction,
     checkOutAction,
     confirmPaymentAction,
@@ -787,6 +788,28 @@ export function ReceptionDashboard() {
                             </Button>
                           </TableCell>
                           <TableCell className="text-right space-x-2">
+                            {b.status === "pending_payment" && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 text-xs"
+                                onClick={async () => {
+                                  if (!window.confirm("Cancel this pending booking?")) return;
+                                  const r = await cancelBookingAction(b.id);
+                                  if ("error" in r) {
+                                    toast({
+                                      title: "Cancel failed",
+                                      description: r.error,
+                                      variant: "destructive",
+                                    });
+                                  } else {
+                                    toast({ title: "Booking cancelled" });
+                                  }
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            )}
                             {b.status === "pending_payment" &&
                               b.guestDetails.paymentMethod === "cash" && (
                                 <Button
