@@ -274,15 +274,6 @@ export function ReceptionDashboard() {
       toast({ title: "Room no longer available", variant: "destructive" });
       return;
     }
-    if (guest.paymentMethod !== "cash") {
-      toast({
-        title: "Walk-in payment method",
-        description:
-          "For walk-ins, use cash and confirm payment from the bookings table.",
-        variant: "destructive",
-      });
-      return;
-    }
     const r = await createBooking(roomId, walkId, cin, cout, guest);
     if ("error" in r) {
       toast({

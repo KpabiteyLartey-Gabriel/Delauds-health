@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { GuestDetailsGhana, IdType } from "@/lib/hotel/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +73,82 @@ export function GhanaGuestForm({ value, onChange, idPrefix = "g" }: Props) {
   const p = (k: string) => `${idPrefix}-${k}`;
   const set = (patch: Partial<GuestDetailsGhana>) =>
     onChange({ ...value, ...patch });
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
+
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Could not read selected image."));
+      reader.readAsDataURL(file);
+    });
+
+  const resizeImageDataUrl = (
+    dataUrl: string,
+    maxSide = 1600,
+    quality = 0.82,
+  ) =>
+    new Promise<string>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Could not process selected image."));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("Could not process selected image."));
+      img.src = dataUrl;
+    });
+
+  const uploadIdPhotoFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setPhotoUploadError("Please select a valid image file.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setPhotoUploadError(null);
+
+    try {
+      const rawDataUrl = await fileToDataUrl(file);
+      const normalizedDataUrl =
+        file.size > 900 * 1024 ? await resizeImageDataUrl(rawDataUrl) : rawDataUrl;
+
+      const res = await fetch("/api/auth/upload-id-photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64Data: normalizedDataUrl }),
+      });
+
+      const data = (await res.json()) as {
+        success?: boolean;
+        url?: string;
+        error?: string;
+      };
+
+      if (!res.ok || !data.success || !data.url) {
+        throw new Error(data.error || "Failed to upload ID photo.");
+      }
+
+      set({ idPhotoUrl: data.url });
+    } catch (error) {
+      setPhotoUploadError(
+        error instanceof Error ? error.message : "Failed to upload ID photo.",
+      );
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const foreign = !value.nationality.toLowerCase().includes("ghana");
 
@@ -278,42 +355,47 @@ export function GhanaGuestForm({ value, onChange, idPrefix = "g" }: Props) {
           </div>
         ) : (
           <div className="space-y-2">
+            {isUploadingPhoto && (
+              <p className="text-sm text-blue-700">Uploading ID photo...</p>
+            )}
+            {photoUploadError && (
+              <p className="text-sm text-red-700">{photoUploadError}</p>
+            )}
             <input
               id={p("photo-file")}
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (ev) => {
-                    set({ idPhotoUrl: ev.target?.result as string });
-                  };
-                  reader.readAsDataURL(file);
+                  await uploadIdPhotoFile(file);
                 }
+                e.currentTarget.value = "";
               }}
             />
             <button
               type="button"
+              disabled={isUploadingPhoto}
               onClick={() =>
                 (
                   document.getElementById(p("photo-file")) as HTMLInputElement
                 )?.click()
               }
-              className="w-full px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded-md transition font-medium"
+              className="w-full px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60 rounded-md transition font-medium"
             >
               📁 Upload Photo
             </button>
             <button
               type="button"
+              disabled={isUploadingPhoto}
               onClick={() => {
                 const input = document.getElementById(
                   p("photo-camera"),
                 ) as HTMLInputElement;
                 input?.click();
               }}
-              className="w-full px-4 py-2 bg-green-500 text-white hover:bg-green-600 rounded-md transition font-medium"
+              className="w-full px-4 py-2 bg-green-500 text-white hover:bg-green-600 disabled:opacity-60 rounded-md transition font-medium"
             >
               📷 Take Photo
             </button>
@@ -323,15 +405,12 @@ export function GhanaGuestForm({ value, onChange, idPrefix = "g" }: Props) {
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (ev) => {
-                    set({ idPhotoUrl: ev.target?.result as string });
-                  };
-                  reader.readAsDataURL(file);
+                  await uploadIdPhotoFile(file);
                 }
+                e.currentTarget.value = "";
               }}
             />
           </div>
