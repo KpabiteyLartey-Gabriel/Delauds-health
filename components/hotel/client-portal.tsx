@@ -88,6 +88,7 @@ export function ClientPortal() {
   } = useHotel();
 
   const [bookOpen, setBookOpen] = useState(false);
+  const [bookStep, setBookStep] = useState<0 | 1>(0);
   const [cin, setCin] = useState(todayISO());
   const [cout, setCout] = useState(tomorrowISO());
   const [pickedRoomIds, setPickedRoomIds] = useState<string[]>([]);
@@ -139,6 +140,15 @@ export function ClientPortal() {
     router.replace("/client");
   }, [searchParams, toast, router]);
 
+  useEffect(() => {
+    if (!bookOpen) return;
+    setGuest((g) => ({
+      ...g,
+      checkInDateTime: `${cin}T14:00`,
+      checkOutDateTime: `${cout}T11:00`,
+    }));
+  }, [cin, cout, bookOpen]);
+
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-950">
@@ -165,11 +175,12 @@ export function ClientPortal() {
     if (pickedRoomIds.length === 0) return;
     setGuest(
       emptyGuestDetails(cin, cout, {
-        fullName: me?.fullName,
-        phone: me?.phone,
-        email: me?.email,
+        fullName: me?.fullName ?? "",
+        phone: me?.phone ?? "",
+        email: me?.email ?? "",
       }),
     );
+    setBookStep(0);
     setBookOpen(true);
   };
 
@@ -257,6 +268,7 @@ export function ClientPortal() {
       });
       setPickedRoomIds([]);
       setBookOpen(false);
+      setBookStep(0);
     }
   };
 
@@ -735,86 +747,167 @@ export function ClientPortal() {
       </main>
 
       {/* ── Booking dialog ───────────────────────────────────── */}
-      <Dialog open={bookOpen} onOpenChange={setBookOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+      <Dialog
+        open={bookOpen}
+        onOpenChange={(open) => {
+          setBookOpen(open);
+          if (!open) setBookStep(0);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-stone-100 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-stone-800">
               <BedDouble className="h-5 w-5 text-amber-500" />
-              Complete your booking
+              {bookStep === 0 ? "Review your stay" : "Guest & payment details"}
             </DialogTitle>
-          </DialogHeader>
-
-          {/* Booking summary strip */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-3">
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div>
-                <p className="text-xs text-amber-600 font-medium">Check-in</p>
-                <p className="font-semibold text-stone-700">{cin}</p>
-              </div>
-              <div>
-                <p className="text-xs text-amber-600 font-medium">Check-out</p>
-                <p className="font-semibold text-stone-700">{cout}</p>
-              </div>
-              <div>
-                <p className="text-xs text-amber-600 font-medium">
-                  {summaryUnit === "day" ? "Days" : "Nights"}
-                </p>
-                <p className="font-semibold text-stone-700">
-                  {nights(cin, cout)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-amber-600 font-medium">
-                  Grand total
-                </p>
-                <p className="font-bold text-amber-700">
-                  {formatGhs(totalPrice)}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 border-t border-amber-200 pt-2">
-              <p className="text-xs text-amber-600 font-medium w-full">
-                Rooms selected
-              </p>
-              {pickedRooms.map((r) => (
-                <span
-                  key={r.id}
-                  className="inline-flex items-center gap-1.5 bg-white border border-amber-300 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full"
+            <div className="mt-4 flex gap-2">
+              {(["Review stay", "Your details"] as const).map((label, i) => (
+                <div
+                  key={label}
+                  className={`flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                    bookStep === i
+                      ? "bg-amber-100 text-amber-900"
+                      : "bg-stone-100 text-stone-500"
+                  }`}
                 >
-                  <BedDouble className="h-3 w-3" />
-                  Room {r.roomNumber} · {formatGhs(r.priceGhs)}/{rateUnit(r.kind)}
-                </span>
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                      bookStep === i
+                        ? "bg-amber-500 text-white"
+                        : i < bookStep
+                          ? "bg-amber-200 text-amber-800"
+                          : "bg-stone-200 text-stone-500"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  {label}
+                </div>
               ))}
             </div>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            {bookStep === 0 ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                        Check-in
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-stone-800">
+                        {cin}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                        Check-out
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-stone-800">
+                        {cout}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                        {summaryUnit === "day" ? "Days" : "Nights"}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-stone-800">
+                        {nights(cin, cout)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                        Total (GHS)
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-amber-700">
+                        {formatGhs(totalPrice)}
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="mt-4 space-y-2 border-t border-amber-200/80 pt-4">
+                    {pickedRooms.map((r) => {
+                      const n = nights(cin, cout);
+                      return (
+                        <li
+                          key={r.id}
+                          className="flex items-center justify-between gap-3 text-sm"
+                        >
+                          <span className="font-medium text-stone-800">
+                            Room {r.roomNumber}
+                            {r.kind === "conference" ? " · Conference" : ""}
+                          </span>
+                          <span className="text-stone-600">
+                            {formatGhs(r.priceGhs * n)} ({n}{" "}
+                            {rateUnit(r.kind)}
+                            {n !== 1 ? "s" : ""})
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+                <PolicyNotice className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" />
+                <p className="text-sm text-stone-500">
+                  Next you will complete Ghana guest-registration details and
+                  choose how to pay. Card and Mobile Money are confirmed online;
+                  cash is confirmed at reception.
+                </p>
+              </div>
+            ) : (
+              <GhanaGuestForm
+                value={guest}
+                onChange={setGuest}
+                idPrefix="c"
+                mode="booking"
+                checkInDate={cin}
+                checkOutDate={cout}
+                className="max-h-none"
+              />
+            )}
           </div>
 
-          <PolicyNotice className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" />
-
-          <div className="border-t border-stone-100 pt-4">
-            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">
-              Guest details (Ghana registration)
-            </p>
-            <GhanaGuestForm value={guest} onChange={setGuest} idPrefix="c" />
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setBookOpen(false)}
-              className="border-stone-200"
-            >
-              Back
-            </Button>
-            <Button
-              onClick={confirmBook}
-              disabled={booking}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-            >
-              <CalendarCheck className="h-4 w-4 mr-1.5" />
-              {booking
-                ? "Booking…"
-                : `Confirm ${pickedRoomIds.length} room${pickedRoomIds.length > 1 ? "s" : ""}`}
-            </Button>
+          <DialogFooter className="shrink-0 border-t border-stone-100 px-6 py-4 gap-2 sm:gap-3">
+            {bookStep === 0 ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setBookOpen(false)}
+                  className="border-stone-200"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => setBookStep(1)}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                >
+                  Continue to details
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setBookStep(0)}
+                  className="border-stone-200"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={confirmBook}
+                  disabled={booking}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                >
+                  <CalendarCheck className="h-4 w-4 mr-1.5" />
+                  {booking
+                    ? "Booking…"
+                    : guest.paymentMethod === "cash"
+                      ? `Request ${pickedRoomIds.length} room${pickedRoomIds.length > 1 ? "s" : ""}`
+                      : `Pay ${formatGhs(totalPrice)}`}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

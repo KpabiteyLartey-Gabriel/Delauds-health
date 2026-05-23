@@ -164,3 +164,78 @@ html {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Scroll reveal */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal-on-scroll--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Hero ambient orbs */
+.hero-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: float 9s ease-in-out infinite;
+}
+
+.hero-orb--amber {
+  width: 280px;
+  height: 280px;
+  background: rgba(212, 167, 92, 0.18);
+  top: -8%;
+  right: 5%;
+  animation-delay: 0s;
+}
+
+.hero-orb--warm {
+  width: 200px;
+  height: 200px;
+  background: rgba(196, 144, 74, 0.1);
+  bottom: 10%;
+  left: -5%;
+  animation-delay: -3s;
+}
+
+.dark .hero-orb--amber {
+  background: rgba(212, 167, 92, 0.1);
+}
+
+.dark .hero-orb--warm {
+  background: rgba(196, 144, 74, 0.06);
+}
+
+.hero-image-ken-burns {
+  animation: ken-burns 22s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb,
+  .hero-image-ken-burns {
+    animation: none;
+  }
+
+  .animate-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 /**
- * Seeds MongoDB with demo users, rooms, and walk-in account.
- * Usage: npm run db:seed   (requires MONGODB_URI in .env or environment)
+ * Seeds MongoDB with staff accounts and walk-in placeholder.
+ * Rooms are added by admin in the dashboard — not seeded here.
+ * Usage: npm run db:seed   (requires MONGODB_URI in .env)
  */
 import "dotenv/config";
 import bcrypt from "bcryptjs";
@@ -21,6 +22,17 @@ async function main() {
     process.exit(1);
   }
 
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+  const receptionPassword = process.env.SEED_RECEPTION_PASSWORD?.trim();
+  const walkinPassword = process.env.SEED_WALKIN_PASSWORD?.trim();
+
+  if (!adminPassword || !receptionPassword || !walkinPassword) {
+    console.error(
+      "Set SEED_ADMIN_PASSWORD, SEED_RECEPTION_PASSWORD, and SEED_WALKIN_PASSWORD in .env before seeding.",
+    );
+    process.exit(1);
+  }
+
   await connectDb();
   console.info("Clearing collections…");
   await Booking.deleteMany({});
@@ -32,53 +44,39 @@ async function main() {
   try {
     await User.collection.dropIndexes();
   } catch {
-    /* collection may not exist yet — safe to ignore */
+    /* collection may not exist yet */
   }
 
-  console.info("Creating users…");
-  const adminHash = await hash("Mamavi882020!");
-  const receptionHash = await hash("1,2,3rep");
-  const clientHash = await hash("1,2,3cli");
+  console.info("Creating staff users…");
+  const adminHash = await hash(adminPassword);
+  const receptionHash = await hash(receptionPassword);
+  const walkinHash = await hash(walkinPassword);
 
   await User.create([
     {
-      email: "info.waterhouselodge@gmail.com",
+      email: process.env.SEED_ADMIN_EMAIL?.trim() || "info.waterhouselodge@gmail.com",
       passwordHash: adminHash,
       role: "admin",
       fullName: "System Admin",
     },
     {
-      email: "waterhouse.logde@gmail.com",
+      email:
+        process.env.SEED_RECEPTION_EMAIL?.trim() || "waterhouse.logde@gmail.com",
       passwordHash: receptionHash,
       role: "receptionist",
       fullName: "Front Desk",
     },
     {
-      email: "guest@waterhouselodge.com",
-      passwordHash: clientHash,
-      role: "client",
-      fullName: "Demo Guest",
-      phone: "0240000000",
-    },
-    {
       email: WALKIN_EMAIL,
-      passwordHash: clientHash,
+      passwordHash: walkinHash,
       role: "client",
       fullName: "Walk-in guest (lobby)",
     },
   ]);
 
-  console.info("Creating rooms…");
-  const prices = [450, 520, 380, 600, 410];
-  await Room.insertMany([
-    ...prices.map((priceGhs, i) => ({
-      roomNumber: String(100 + i + 1),
-      priceGhs,
-      kind: "guest" as const,
-    })),
-    { roomNumber: "106", priceGhs: 490, kind: "guest" as const },
-    { roomNumber: "CONF-1", priceGhs: 2500, kind: "conference" as const },
-  ]);
+  console.info(
+    "Done. No demo rooms or guest accounts were created — add rooms in the admin portal.",
+  );
   await mongoose.disconnect();
 }
 

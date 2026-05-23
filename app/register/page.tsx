@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2 } from "lucide-react";
@@ -21,24 +21,9 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { register, ready } = useHotel();
-  const [fullName, setFullName] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("registrationFullName") || "";
-    }
-    return "";
-  });
-  const [phone, setPhone] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("registrationPhone") || "";
-    }
-    return "";
-  });
-  const [email, setEmail] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("registrationEmail") || "";
-    }
-    return "";
-  });
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -66,78 +51,72 @@ export default function RegisterPage() {
     }
   };
 
-  useEffect(() => {
-    localStorage.setItem("registrationFullName", fullName);
-  }, [fullName]);
-
-  useEffect(() => {
-    localStorage.setItem("registrationPhone", phone);
-  }, [phone]);
-
-  useEffect(() => {
-    localStorage.setItem("registrationEmail", email);
-  }, [email]);
-
   if (!ready) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12 dark:bg-slate-950">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-[#FAF8F5] px-4 py-12 dark:bg-stone-950">
+      <Card className="w-full max-w-md border-stone-200 shadow-xl dark:border-stone-800">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-            <Building2 className="h-10 w-10 text-amber-700" />
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-amber-300/40 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+              <Building2 className="h-7 w-7" />
+            </span>
           </div>
-          <CardTitle>Guest registration</CardTitle>
+          <CardTitle className="font-display text-2xl font-light">
+            Create guest account
+          </CardTitle>
           <CardDescription>
-            App account only. Full Ghana guest-register details are collected
-            per booking.
+            Sign up to book rooms online. Ghana registration details are
+            completed when you reserve a stay.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="name">Full name</Label>
               <Input
                 id="name"
+                autoComplete="name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="mt-1"
               />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
+                autoComplete="tel"
+                inputMode="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
-                className="mt-1"
               />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1"
               />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="pw">Password</Label>
               <Input
                 id="pw"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="mt-1"
               />
+              <p className="text-xs text-muted-foreground">At least 8 characters</p>
             </div>
             <Button
               type="submit"

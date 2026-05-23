@@ -31,13 +31,6 @@ function seedUsersPublic(): HotelUserPublic[] {
       fullName: "Front Desk",
     },
     {
-      id: "u-client-demo",
-      email: "guest@waterhouselodge.com",
-      role: "client",
-      fullName: "Demo Guest",
-      phone: "0240000000",
-    },
-    {
       id: "u-walkin",
       email: "walkin@waterhouselodge.local",
       role: "client",
@@ -46,21 +39,10 @@ function seedUsersPublic(): HotelUserPublic[] {
   ];
 }
 
-function seedRooms(): Room[] {
-  const prices = [450, 520, 380, 600, 410];
-  return prices.map((priceGhs, i) => ({
-    id: `room-${100 + i + 1}`,
-    roomNumber: String(100 + i + 1),
-    priceGhs,
-    kind: "guest" as const,
-    status: "available" as RoomStatus,
-  }));
-}
-
 export function defaultState(): HotelState {
   return {
     users: seedUsersPublic(),
-    rooms: seedRooms(),
+    rooms: [],
     bookings: [],
     auditLog: [],
     occupancy: [],

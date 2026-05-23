@@ -85,11 +85,31 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
+  			},
+  			float: {
+  				'0%, 100%': { transform: 'translateY(0)' },
+  				'50%': { transform: 'translateY(-12px)' }
+  			},
+  			'ken-burns': {
+  				'0%': { transform: 'scale(1)' },
+  				'100%': { transform: 'scale(1.05)' }
+  			},
+  			'line-grow': {
+  				'0%': { transform: 'scaleX(0)', opacity: '0.5' },
+  				'100%': { transform: 'scaleX(1)', opacity: '1' }
+  			},
+  			shimmer: {
+  				'0%': { transform: 'translateX(-100%)' },
+  				'100%': { transform: 'translateX(100%)' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			float: 'float 7s ease-in-out infinite',
+  			'ken-burns': 'ken-burns 22s ease-in-out infinite alternate',
+  			'line-grow': 'line-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+  			shimmer: 'shimmer 2.5s ease-in-out infinite'
   		}
   	}
   },

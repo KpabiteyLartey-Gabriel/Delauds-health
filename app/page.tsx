@@ -43,6 +43,7 @@ import {
 } from "@/lib/lodge-media";
 import { AvailableRoomsFloat } from "@/components/available-rooms-float";
 import { ConferenceAvailabilityLanding } from "@/components/conference-availability-landing";
+import { RevealOnScroll } from "@/components/reveal-on-scroll";
 
 type LightboxImage = {
   src: string;
@@ -82,7 +83,7 @@ function ImageLightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/97 backdrop-blur-xl"
+      className="fixed inset-0 z-50 flex animate-in fade-in-0 items-center justify-center bg-black/97 backdrop-blur-xl duration-300"
       onClick={onClose}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -122,7 +123,7 @@ function ImageLightbox({
       )}
 
       <div
-        className="relative max-h-[90vh] max-w-[90vw] cursor-default"
+        className="relative max-h-[90vh] max-w-[90vw] cursor-default animate-in zoom-in-95 fade-in-0 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <Image
@@ -209,7 +210,7 @@ export default function HomePage() {
       <AvailableRoomsFloat />
 
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-[#FAF8F5]/95 backdrop-blur-xl dark:border-stone-800/40 dark:bg-[#0E0C0A]/95">
+      <header className="sticky top-0 z-50 animate-in fade-in-0 slide-in-from-top-2 border-b border-stone-200/60 bg-[#FAF8F5]/95 backdrop-blur-xl duration-500 dark:border-stone-800/40 dark:bg-[#0E0C0A]/95">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/" className="flex items-center gap-3 font-body">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-300/30 bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-amber-500">
@@ -246,30 +247,32 @@ export default function HomePage() {
       <main>
         {/* ── HERO ── */}
         <section className="hero-gradient relative overflow-hidden">
+          <div className="hero-orb hero-orb--amber" aria-hidden />
+          <div className="hero-orb hero-orb--warm" aria-hidden />
           {/* Decorative grid */}
           <div className="pointer-events-none absolute inset-0 opacity-[0.025] dark:opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} aria-hidden />
 
           <div className="mx-auto max-w-6xl px-6 py-16 sm:py-24 lg:py-28">
             <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
               {/* Copy */}
-              <div className="order-2 lg:order-1">
+              <div className="order-2 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 fill-mode-both lg:order-1">
                 <div className="mb-6 inline-flex items-center gap-2 font-body">
-                  <span className="gold-line block h-px w-8" />
-                  <span className="text-xs font-medium tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Adenta · Accra · Ghana</span>
+                  <span className="gold-line block h-px w-8 origin-left animate-line-grow" />
+                  <span className="animate-in fade-in-0 duration-700 fill-mode-both delay-150 text-xs font-medium tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Adenta · Accra · Ghana</span>
                 </div>
 
-                <h1 className="font-display max-w-xl text-balance text-5xl font-light leading-[1.1] tracking-tight text-stone-900 dark:text-white sm:text-6xl lg:text-7xl">
+                <h1 className="font-display max-w-xl text-balance text-5xl font-light leading-[1.1] tracking-tight text-stone-900 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 fill-mode-both delay-200 dark:text-white sm:text-6xl lg:text-7xl">
                   Rest easy —<br />
                   <em className="italic text-amber-600 dark:text-amber-400">your room</em><br />
                   is waiting
                 </h1>
 
-                <p className="font-body mt-7 max-w-lg text-pretty text-base leading-relaxed text-stone-500 dark:text-stone-400">
+                <p className="font-body mt-7 max-w-lg text-pretty text-base leading-relaxed text-stone-500 animate-in fade-in-0 duration-700 fill-mode-both delay-300 dark:text-stone-400">
                   Single rooms with crisp bed linen, genuine calm, and rates displayed in Ghana Cedis.
                   Check availability and secure your stay in minutes.
                 </p>
 
-                <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="mt-10 flex animate-in fade-in-0 slide-in-from-bottom-2 flex-col gap-3 fill-mode-both delay-500 duration-700 sm:flex-row sm:items-center">
                   <Button
                     asChild
                     size="lg"
@@ -290,7 +293,7 @@ export default function HomePage() {
                   </Button>
                 </div>
 
-                <p className="font-body mt-5 text-xs text-stone-400">Walk-ins welcome at reception.</p>
+                <p className="font-body mt-5 animate-in fade-in-0 fill-mode-both text-xs text-stone-400 delay-700 duration-700">Walk-ins welcome at reception.</p>
 
                 {/* Trust signals */}
                 <div className="mt-8 flex flex-wrap gap-5">
@@ -298,8 +301,12 @@ export default function HomePage() {
                     { label: "GHS pricing", desc: "Local currency" },
                     { label: "Clean rooms", desc: "Verified daily" },
                     { label: "Walk-in OK", desc: "No hidden fees" },
-                  ].map((t) => (
-                    <div key={t.label} className="flex items-center gap-2">
+                  ].map((t, i) => (
+                    <div
+                      key={t.label}
+                      className="flex animate-in fade-in-0 slide-in-from-left-2 items-center gap-2 fill-mode-both duration-500"
+                      style={{ animationDelay: `${800 + i * 120}ms` }}
+                    >
                       <span className="h-1 w-1 rounded-full bg-amber-500" />
                       <div className="font-body">
                         <span className="text-xs font-medium text-stone-900 dark:text-stone-100">{t.label}</span>
@@ -311,11 +318,11 @@ export default function HomePage() {
               </div>
 
               {/* Image */}
-              <div className="order-1 lg:order-2">
+              <div className="order-1 animate-in fade-in-0 zoom-in-95 slide-in-from-right-4 duration-700 fill-mode-both delay-300 lg:order-2">
                 <div className="relative mx-auto max-w-xl lg:max-w-none">
                   {/* Corner accent */}
-                  <div className="absolute -right-3 -top-3 h-20 w-20 rounded-2xl border border-amber-400/20 hidden lg:block" aria-hidden />
-                  <div className="absolute -bottom-3 -left-3 h-16 w-16 rounded-xl border border-amber-400/10 hidden lg:block" aria-hidden />
+                  <div className="absolute -right-3 -top-3 hidden h-20 w-20 animate-float rounded-2xl border border-amber-400/20 lg:block" aria-hidden />
+                  <div className="absolute -bottom-3 -left-3 hidden h-16 w-16 animate-float rounded-xl border border-amber-400/10 lg:block [animation-delay:-2s]" aria-hidden />
 
                   <div
                     className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-stone-200 shadow-2xl shadow-stone-300/30 dark:border-stone-800 dark:shadow-black/60 sm:aspect-[5/4] lg:aspect-[4/5] lg:min-h-[480px] cursor-pointer group"
@@ -335,7 +342,7 @@ export default function HomePage() {
                       alt="Welcoming lodge bedroom with a comfortable bed and soft lighting"
                       fill
                       priority
-                      className="object-cover transition duration-700 group-hover:scale-105"
+                      className="hero-image-ken-burns object-cover transition duration-700 group-hover:scale-105 motion-reduce:animate-none"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-stone-950/10 to-transparent" aria-hidden />
@@ -354,7 +361,7 @@ export default function HomePage() {
 
         {/* ── ACCESSIBILITY WARNING ── */}
         <section className="border-y border-red-900/20 bg-gradient-to-r from-red-950/10 via-red-950/20 to-red-950/10 dark:border-red-800/30 dark:from-red-950/40 dark:via-red-950/30 dark:to-red-950/40">
-          <div className="mx-auto max-w-6xl px-6 py-6">
+          <RevealOnScroll className="mx-auto max-w-6xl px-6 py-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
               <div className="flex shrink-0 gap-2">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400">
@@ -379,13 +386,13 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </RevealOnScroll>
         </section>
 
         {/* ── ROOM GALLERY ── */}
         <section className="border-b border-stone-200/60 bg-stone-50 py-20 dark:border-stone-800/40 dark:bg-stone-900/20 sm:py-28">
           <div className="mx-auto max-w-6xl px-6">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-14">
+            <RevealOnScroll className="mb-14 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Accommodations</p>
                 <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
@@ -405,13 +412,13 @@ export default function HomePage() {
                   <ArrowUpRight className="h-4 w-4" />
                 </Link>
               </Button>
-            </div>
+            </RevealOnScroll>
 
             <div className="grid gap-6 sm:grid-cols-2">
               {ROOM_GALLERY.map((room, idx) => (
+                <RevealOnScroll key={room.src} delay={idx * 120}>
                 <article
-                  key={room.src}
-                  className="card-shine group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-all hover:border-amber-300/50 hover:shadow-lg dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-700/30"
+                  className="card-shine group h-full overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-300/50 hover:shadow-lg dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-700/30"
                 >
                   <div
                     className="relative aspect-[16/10] overflow-hidden cursor-pointer"
@@ -461,6 +468,7 @@ export default function HomePage() {
                     </div>
                   </div>
                 </article>
+                </RevealOnScroll>
               ))}
             </div>
           </div>
@@ -469,7 +477,7 @@ export default function HomePage() {
         {/* ── MAP & LOCATION ── */}
         <section className="border-b border-stone-200/60 bg-white py-20 dark:border-stone-800/40 dark:bg-stone-950 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
-            <div className="mb-12">
+            <RevealOnScroll className="mb-12">
               <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Location</p>
               <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
                 Find us in Accra
@@ -477,10 +485,10 @@ export default function HomePage() {
               <p className="font-body mt-4 max-w-xl text-base leading-relaxed text-stone-500 dark:text-stone-400">
                 Situated in Adenta, a calm residential neighbourhood in Greater Accra. Easy to reach, quiet to stay in.
               </p>
-            </div>
+            </RevealOnScroll>
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-              <div className="relative overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm">
+              <RevealOnScroll className="relative overflow-hidden rounded-2xl border border-stone-200 shadow-sm transition-shadow duration-500 hover:shadow-lg dark:border-stone-800">
                 <iframe
                   src={mapsEmbedSrc}
                   width="100%"
@@ -504,15 +512,15 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </RevealOnScroll>
 
-              <div className="flex flex-col gap-4">
-                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 dark:border-stone-800 dark:bg-stone-900/60">
+              <RevealOnScroll className="flex flex-col gap-4" delay={150}>
+                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 transition-transform duration-300 hover:-translate-y-0.5 dark:border-stone-800 dark:bg-stone-900/60">
                   <p className="font-body text-xs font-medium tracking-widest text-stone-400 uppercase mb-3">Address</p>
                   <p className="font-body text-sm font-semibold text-stone-900 dark:text-white leading-relaxed">{LODGE_MAP_NAME}</p>
                   <p className="font-body mt-1 text-sm text-stone-500 dark:text-stone-400 leading-relaxed">{LODGE_MAP_STREET}</p>
                 </div>
-                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 dark:border-stone-800 dark:bg-stone-900/60">
+                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 transition-transform duration-300 hover:-translate-y-0.5 dark:border-stone-800 dark:bg-stone-900/60">
                   <p className="font-body text-xs font-medium tracking-widest text-stone-400 uppercase mb-3">Reception</p>
                   <p className="font-body text-sm text-stone-600 dark:text-stone-300">Open daily 10:00 – 22:00</p>
                   <p className="font-body mt-1 text-sm text-stone-500">Desk staffed on-site</p>
@@ -526,7 +534,7 @@ export default function HomePage() {
                     <ArrowUpRight className="h-4 w-4" />
                   </a>
                 </Button>
-              </div>
+              </RevealOnScroll>
             </div>
           </div>
         </section>
@@ -534,27 +542,29 @@ export default function HomePage() {
         {/* ── EXPERIENCE / CONFERENCE ── */}
         <section className="bg-[#FAF8F5] py-20 dark:bg-[#0E0C0A] sm:py-28">
           <div className="mx-auto grid max-w-6xl gap-14 px-6 lg:grid-cols-2 lg:items-start lg:gap-20">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-stone-200 shadow-xl shadow-stone-200/50 dark:border-stone-800 dark:shadow-black/30 lg:aspect-auto lg:min-h-[460px]">
+            <RevealOnScroll>
+            <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl border border-stone-200 shadow-xl shadow-stone-200/50 dark:border-stone-800 dark:shadow-black/30 lg:aspect-auto lg:min-h-[460px]">
               <Image
                 src={EXPERIENCE_IMAGE}
                 alt="Bright, comfortable lodge interior"
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-br from-transparent to-stone-950/20" />
             </div>
-            <div className="flex flex-col justify-center">
+            </RevealOnScroll>
+            <RevealOnScroll className="flex flex-col justify-center" delay={120}>
               <p className="font-body mb-4 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Conference & Events</p>
               <ConferenceAvailabilityLanding className="mt-0 w-full max-w-none" />
-            </div>
+            </RevealOnScroll>
           </div>
         </section>
 
         {/* ── WHY US ── */}
         <section className="border-y border-stone-200/60 bg-stone-50 py-20 dark:border-stone-800/40 dark:bg-stone-900/20 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
-            <div className="text-center mb-14">
+            <RevealOnScroll className="mb-14 text-center">
               <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Why guests choose us</p>
               <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
                 Simple, honest lodging
@@ -562,7 +572,7 @@ export default function HomePage() {
               <p className="font-body mx-auto mt-4 max-w-xl text-base text-stone-500 dark:text-stone-400">
                 Transparent pricing, proper registration, and a standard of care that makes you feel at home.
               </p>
-            </div>
+            </RevealOnScroll>
 
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
@@ -570,20 +580,22 @@ export default function HomePage() {
                 { icon: Sparkles, title: "Rates in GHS", text: "Compare nightly prices in Ghana Cedis before you commit to anything." },
                 { icon: ShieldCheck, title: "Guest registration", text: "We securely collect the information required under Ghana regulations." },
                 { icon: Wifi, title: "Comfort first", text: "Clean, well-kept rooms designed for genuine rest or remote work." },
-              ].map((item) => (
+              ].map((item, i) => (
                 <li key={item.title}>
-                  <div className="card-shine h-full rounded-2xl border border-stone-200 bg-white p-6 transition-all hover:border-amber-300/50 hover:shadow-md dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-700/30">
+                  <RevealOnScroll delay={i * 80} className="h-full">
+                  <div className="card-shine h-full rounded-2xl border border-stone-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-amber-300/50 hover:shadow-md dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-amber-700/30">
                     <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-amber-200/50 bg-amber-50 text-amber-600 dark:border-amber-900/30 dark:bg-amber-900/20 dark:text-amber-400">
                       <item.icon className="h-5 w-5" aria-hidden />
                     </div>
                     <h3 className="font-body font-semibold text-stone-900 dark:text-white">{item.title}</h3>
                     <p className="font-body mt-2 text-sm leading-relaxed text-stone-500 dark:text-stone-400">{item.text}</p>
                   </div>
+                  </RevealOnScroll>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-8 flex items-start gap-4 rounded-2xl border border-red-200/60 bg-red-50/50 p-5 dark:border-red-900/30 dark:bg-red-950/20">
+            <RevealOnScroll className="mt-8 flex items-start gap-4 rounded-2xl border border-red-200/60 bg-red-50/50 p-5 dark:border-red-900/30 dark:bg-red-950/20">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-500 dark:bg-red-900/40 dark:text-red-400">
                 <Accessibility className="h-4 w-4" />
               </div>
@@ -591,24 +603,25 @@ export default function HomePage() {
                 <span className="font-semibold text-red-600 dark:text-red-400">Accessibility: </span>
                 Waterhouse Lodge does not have an elevator and is not wheelchair accessible. All guest rooms are on upper floors reachable only via stairs. We apologise for any inconvenience.
               </p>
-            </div>
+            </RevealOnScroll>
           </div>
         </section>
 
         {/* ── CONTACT ── */}
         <section id="contact" className="border-b border-stone-200/60 bg-white py-20 dark:border-stone-800/40 dark:bg-stone-950 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
-            <div className="text-center mb-14">
+            <RevealOnScroll className="mb-14 text-center">
               <p className="font-body mb-3 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Reach us</p>
               <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">Get in touch</h2>
               <p className="font-body mx-auto mt-4 max-w-xl text-base text-stone-500 dark:text-stone-400">
                 Have questions about your stay? We're happy to help — before, during, or after your visit.
               </p>
-            </div>
+            </RevealOnScroll>
 
             <div className="mx-auto max-w-2xl space-y-5">
               {/* Contact info */}
-              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 dark:border-stone-800 dark:bg-stone-900/40">
+              <RevealOnScroll>
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 transition-shadow duration-300 hover:shadow-md dark:border-stone-800 dark:bg-stone-900/40">
                 <h3 className="font-display text-xl font-medium text-stone-900 dark:text-white mb-6">Contact Information</h3>
                 <div className="space-y-5">
                   {[
@@ -632,9 +645,11 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
+              </RevealOnScroll>
 
               {/* Hours */}
-              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 dark:border-stone-800 dark:bg-stone-900/40">
+              <RevealOnScroll delay={100}>
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 transition-shadow duration-300 hover:shadow-md dark:border-stone-800 dark:bg-stone-900/40">
                 <h3 className="font-display text-xl font-medium text-stone-900 dark:text-white mb-6">Opening Hours</h3>
                 <div className="flex items-start gap-4">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-amber-500 dark:border-stone-700 dark:bg-stone-800">
@@ -654,9 +669,11 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+              </RevealOnScroll>
 
               {/* Social */}
-              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 dark:border-stone-800 dark:bg-stone-900/40">
+              <RevealOnScroll delay={200}>
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-7 transition-shadow duration-300 hover:shadow-md dark:border-stone-800 dark:bg-stone-900/40">
                 <h3 className="font-display text-xl font-medium text-stone-900 dark:text-white mb-6">Follow Us</h3>
                 <div className="flex flex-wrap gap-3">
                   {socialLinks.map((social) => (
@@ -676,6 +693,7 @@ export default function HomePage() {
                   Stay connected for updates, offers, and a glimpse of life at Waterhouse Lodge.
                 </p>
               </div>
+              </RevealOnScroll>
             </div>
           </div>
         </section>
@@ -684,6 +702,7 @@ export default function HomePage() {
         <section className="py-20 sm:py-24">
           <div className="mx-auto max-w-6xl px-6">
             <div className="grid gap-14 lg:grid-cols-2 lg:items-start lg:gap-20">
+              <RevealOnScroll>
               <div>
                 <p className="font-body mb-4 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Process</p>
                 <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl">
@@ -696,8 +715,8 @@ export default function HomePage() {
                     "Pick a room by price and complete the registration details for your stay.",
                     "Arrive on check-in day; we verify ID and welcome you warmly.",
                   ].map((step, i) => (
-                    <li key={i} className="flex gap-5">
-                      <span className="font-display number-badge flex h-9 w-9 shrink-0 items-center justify-center text-lg font-light">
+                    <li key={i} className="flex gap-5 transition-transform duration-300 hover:translate-x-1">
+                      <span className="font-display number-badge flex h-9 w-9 shrink-0 items-center justify-center text-lg font-light transition-transform duration-300 group-hover:scale-110">
                         {i + 1}
                       </span>
                       <p className="font-body pt-1 text-sm leading-relaxed text-stone-500 dark:text-stone-400">{step}</p>
@@ -705,8 +724,9 @@ export default function HomePage() {
                   ))}
                 </ol>
               </div>
+              </RevealOnScroll>
 
-              <div className="rounded-3xl border border-stone-200 bg-stone-50 p-8 dark:border-stone-800 dark:bg-stone-900/40 lg:p-10">
+              <RevealOnScroll className="rounded-3xl border border-stone-200 bg-stone-50 p-8 dark:border-stone-800 dark:bg-stone-900/40 lg:p-10" delay={120}>
                 <div className="flex items-start gap-4">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-amber-500 dark:border-stone-700 dark:bg-stone-800">
                     <MapPin className="h-4.5 w-4.5" />
@@ -734,7 +754,7 @@ export default function HomePage() {
                     </Link>
                   </Button>
                 </div>
-              </div>
+              </RevealOnScroll>
             </div>
           </div>
         </section>
@@ -743,7 +763,7 @@ export default function HomePage() {
         <section className="relative overflow-hidden border-t border-stone-200/60 dark:border-stone-800/40">
           <div className="absolute inset-0 hero-gradient" aria-hidden />
           <div className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} aria-hidden />
-          <div className="relative mx-auto max-w-3xl px-6 py-20 text-center sm:py-24">
+          <RevealOnScroll className="relative mx-auto max-w-3xl px-6 py-20 text-center sm:py-24">
             <p className="font-body mb-4 text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase">Reserve today</p>
             <h2 className="font-display text-4xl font-light text-stone-900 dark:text-white sm:text-5xl lg:text-6xl">
               Ready to stay<br />
@@ -772,7 +792,7 @@ export default function HomePage() {
                 <Link href="/login">Guest login</Link>
               </Button>
             </div>
-          </div>
+          </RevealOnScroll>
         </section>
       </main>
 
